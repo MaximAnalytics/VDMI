@@ -1921,35 +1921,43 @@ Function getISAHconnection() As ADODB.Connection
     Set getISAHconnection = db.openDBconn(main.getISAHconnstr())
 End Function
 
-' test connection
+' test isah connection
 Sub isah_export_test_connection()
+    If checkIsahTestQuery() Then
+        MsgBox "verbinding met ISAH geslaagd!"
+    End If
+End Sub
+
+Function checkIsahTestQuery() As Boolean
     'input for T_ProductionHeader: connect to db and execute query
     Dim sql1 As String, sqlconn As ADODB.Connection, rs0 As ADODB.Recordset
     Debug.Print "Try to connect with string: " + main.getISAHconnstr()
-On Error GoTo connection_error:
-    Set sqlconn = main.getISAHconnection()
-
-    ' connection management: make sure to close connections on error
-On Error GoTo close_connection
-    sql1 = "SELECT 1"
-    Set rs0 = db.queryDB(sqlconn, sql1)
-    If True Then
-       db.printRecordset rs0, False, False
-    End If
-    sqlconn.Close
-On Error GoTo 0
-    GoTo no_error
+    
+    On Error GoTo connection_error:
+        Set sqlconn = main.getISAHconnection()
+        ' connection management: make sure to close connections on error
+    On Error GoTo close_connection
+        sql1 = "SELECT 1"
+        Set rs0 = db.queryDB(sqlconn, sql1)
+        If True Then
+           db.printRecordset rs0, False, False
+        End If
+        sqlconn.Close
+    On Error GoTo 0
+        GoTo no_error
   
 connection_error:
     MsgBox Err.Description
-    Exit Sub
+    checkIsahTestQuery = False
+    Exit Function
 close_connection:
     sqlconn.Close
     MsgBox Err.Description
-    Exit Sub
+    checkIsahTestQuery = False
+    Exit Function
 no_error:
-    MsgBox "verbinding met ISAH geslaagd!"
-End Sub
+    checkIsahTestQuery = True
+End Function
 
 ' Function to get ISAH database name based database/connection string dropdown
 Function getISAHdbname() As String
@@ -2121,6 +2129,12 @@ next_capgrp_sheet:
     ' in result array `orders_arr_all`, filter out all rows where ProdHeaderOrdNr is NULL (Empty or '')
     OrdersWithOrdNrArray = a.RemoveNullsFromArray(orders_arr_all, "ProdHeaderOrdNr")
     
+    'TODO a.ArrayIsNull()
+    If a.num_array_rows(OrdersWithOrdNrArray) Then
+       Debug.Print "array is null: OrdersWithOrdNrArray"
+       Exit Sub
+    End If
+
     ' paste array `orders_arr_all` and create named range `main.ISAH_STAGING_RANGE_NAME`
     a.paste_array OrdersWithOrdNrArray, "A1", ws0
     r1 = a.num_array_rows(OrdersWithOrdNrArray)
@@ -2859,6 +2873,14 @@ Public Sub isah_export_run_all()
     ' prepare the staging sheet `EXPORT_ISAH` using capgrp sheets
     main.isah_export_stage_orders
     
+    ' check if then staging sheet is filled if not exit sub
+    Dim ordersRange As Range: Set ordersRange = r.get_range(main.ISAH_STAGING_RANGE_NAME, wb:=ThisWorkbook)
+    If ordersRange.Rows.count = 1 Then
+       MsgBox str.subInStr("No order records on staging sheet `@1`", main.ISAH_STAGING_SHEET_NAME)
+       ThisWorkbook.Sheets(main.CONTROL_SHEET_NAME).Activate
+       Exit Sub
+    End If
+    
     ' connect to ISAH database and update the MachGrpCode, Qty and StandCapacity in `ProdBillOfOperation`
     main.isah_export_update_prodboo_grp
 
@@ -3439,14 +3461,16 @@ clean_up:
   
 End Sub
 
-Public Sub btn_isah_update_aantal_per_pallet_Click()
+Public Sub btn_isah_update_aantal_per_pallet_Click(Optional showMsgBox As Boolean = True)
   Dim ctrl_sheet As Worksheet: Set ctrl_sheet = ThisWorkbook.Sheets(main.CONTROL_SHEET_NAME)
   Application.ScreenUpdating = False
   Application.EnableEvents = False
 
   On Error GoTo control_sheet
   main.isah_import_articles
-  MsgBox "Sheet geupdatet: " & main.NUMBER_PER_PALLET_SHEET_NAME
+  If showMsgBox Then
+     MsgBox "Sheet geupdatet: " & main.NUMBER_PER_PALLET_SHEET_NAME
+  End If
   GoTo clean_up
   
 control_sheet:
@@ -3536,3 +3560,9 @@ Function check_isah_input() As Boolean
 End Function
 
 
+' OPEN WORKBOOK METHODS
+Sub init_articles_per_pallet()
+   If main.checkIsahTestQuery() Then
+      main.btn_isah_update_aantal_per_pallet_Click False
+   End If
+End Sub
