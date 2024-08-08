@@ -1,4 +1,26 @@
 'filesystem
+'1 utilities
+'2 vb modules
+
+Sub tests_fs()
+    '1 utilities
+    Debug.Assert pathExist(ThisWorkbook.path) = True
+    Debug.Assert pathExist("fakepath") = False
+
+    Dim testpaths As String
+    Dim testpath As String
+    
+    ' Set test paths including the valid path ThisWorkbook.path
+    testpath = ThisWorkbook.path
+    testpaths = "fakepath1;fakepath2;" & testpath & ";fakepath3"
+    
+    ' Assertion test
+    Debug.Assert getFirstValidPath(testpaths) = testpath
+    
+    Debug.Print "tests_fs completed!"
+End Sub
+
+'1 utilities
 Function fileIsExcel(fl As File) As Boolean
     fileIsExcel = False
     If (InStr(fl.Type, "Excel") > 0) = True Then
@@ -6,6 +28,53 @@ Function fileIsExcel(fl As File) As Boolean
     End If
 End Function
 
+' Function to check if a given path exists
+Function pathExist(path As String) As Boolean
+    ' This function checks if the specified path exists.
+    '
+    ' Parameters:
+    ' path - The path to check for existence.
+    '
+    ' Returns:
+    ' True if the path exists, False otherwise.
+    
+    Dim fso As Object
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    pathExist = fso.FolderExists(path) Or fso.FileExists(path)
+End Function
+
+' Function to get the first valid path from a list of paths
+Function getFirstValidPath(paths As String, Optional sep As String = ";") As String
+    ' This function returns the first valid path from a list of paths separated by a specified delimiter.
+    ' If no valid path is found, it raises an error.
+    '
+    ' Parameters:
+    ' paths - A string containing a list of paths separated by the specified delimiter.
+    ' sep - (Optional) The delimiter used to separate the paths in the list. Default is ";".
+    '
+    ' Returns:
+    ' The first valid path from the list.
+    
+    Dim pathArray As Variant
+    Dim i As Integer
+    
+    ' Split the paths string into an array using the specified delimiter
+    pathArray = Split(paths, sep)
+    
+    ' Loop through each path in the array and check if it exists
+    For i = LBound(pathArray) To UBound(pathArray)
+        If pathExist(Trim(pathArray(i))) Then
+            getFirstValidPath = Trim(pathArray(i))
+            Exit Function
+        End If
+    Next i
+    
+    ' Raise an error if no valid path is found
+    Err.Raise vbObjectError + 1, "getFirstValidPath", "No valid path found in the list."
+End Function
+
+'2 vb modules
 Sub exportModuleCode(module_name As String, path As String, Optional extension As String = "")
     Dim module_code As String
     Dim file_path As String
@@ -19,6 +88,8 @@ Sub exportModuleCode(module_name As String, path As String, Optional extension A
     If extension = "" Then
         If module_type = "VBComponent" Then
             extension = IIf(ThisWorkbook.VBProject.VBComponents(module_name).Type = vbext_ct_ClassModule, "cls", "bas")
+        Else
+            extension = "txt"
         End If
     End If
         
