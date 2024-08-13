@@ -13,7 +13,39 @@ Sub test_zz_env()
     Debug.Assert zz_env.getVDMIGithub() = "C:\Users\JoelKroodsma\Documents\GitHub\VDMI"
 End Sub
 
-' export modules and export as template
+Function getHomePath() As String
+    getHomePath = fs.getFirstValidPath(HOMEPATH)
+End Function
+
+Function getGithubPath() As String
+    getGithubPath = fs.getFirstValidPath(GITHUBPATH)
+End Function
+
+Function getVDMIGithub() As String
+    getVDMIGithub = os.pathJoin(getGithubPath(), "VDMI")
+End Function
+
+Function getWorkPath() As String
+    getWorkPath = fs.getFirstValidPath(WORKPATH)
+End Function
+
+Function getVDMICodePath() As String
+    getVDMICodePath = fs.getFirstValidPath(getWorkPath(), "VDMI\vba")
+End Function
+
+Function getVDMIDataPath() As String
+    getVDMIDataPath = fs.getFirstValidPath(getWorkPath(), "VDMI\data")
+End Function
+
+Function getVDMITestPath() As String
+    getVDMITestPath = fs.getFirstValidPath(getWorkPath(), "VDMI\testdata")
+End Function
+
+
+Function getExcelTemplatePath() As String
+    getExcelTemplatePath = fs.getFirstValidPath(getHomePath(), "Programming\excel_templates")
+End Function
+
 Sub export_vb_codemodule_code()
     fs.exportModuleCodes MODULES_TO_EXPORT, getVDMICodePath(), "txt"
     fs.exportModuleCodes MODULES_TO_EXPORT, getVDMICodePath()
