@@ -142,11 +142,11 @@ Function KeyExists(col As collection, key As String) As Boolean
     Dim key_exist As Boolean, item As Variant
     key_exist = False
     ' Attempt to retrieve the item with the given key
-    On Error GoTo errhandler
+    On Error GoTo ErrHandler
     key_exist = IsObject(col.item(key))
     key_exist = True
     On Error GoTo 0
-errhandler:
+ErrHandler:
     KeyExists = key_exist
 End Function
 

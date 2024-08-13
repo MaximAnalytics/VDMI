@@ -201,7 +201,7 @@ chk_file:
 Else
 check_type:
     errmsg1 = errmsg1 & " check type xls0 is workbook or file. type xls0 is : " & TypeName(xls0)
-    GoTo errhandler
+    GoTo ErrHandler
 End If
 
 ' get connection string, return to caller
@@ -215,7 +215,7 @@ Set fs0 = Nothing
 Set openExcelConn = conn
 
 Exit Function
-errhandler: Err.Raise 1001, "openExcelConn", errmsg0 & " " & errmsg1 & " " & Error(Err)
+ErrHandler: Err.Raise 1001, "openExcelConn", errmsg0 & " " & errmsg1 & " " & Error(Err)
 End Function
 
 Public Sub executeSql(conn0 As ADODB.Connection, sql0 As String, Optional close_connection As Boolean = False)
@@ -302,7 +302,7 @@ return_value:
     'exit procedure
     Exit Function
     
-errhandler:
+ErrHandler:
     MsgBox errmsg0 & " " & Error(Err)
     End
 'end procedure
@@ -332,7 +332,7 @@ sqlSetCondition = str0
 'exit procedure
 Exit Function
 
-errhandler:
+ErrHandler:
 MsgBox errmsg0 & " " & Error(Err)
 End
 
@@ -364,7 +364,7 @@ sqlWhereCondition = str0
 'exit procedure
 Exit Function
 
-errhandler:
+ErrHandler:
 MsgBox errmsg0 & " " & Error(Err)
 End
 
@@ -419,7 +419,7 @@ return_value:
     'exit procedure
     Exit Function
     
-errhandler:
+ErrHandler:
     MsgBox errmsg0 & " " & Error(Err)
     End
 'end procedure
@@ -464,7 +464,7 @@ return_value:
     'exit procedure
     Exit Function
     
-errhandler:
+ErrHandler:
     MsgBox errmsg0 & " " & Error(Err)
     End
 
@@ -581,7 +581,7 @@ End With
 'exit procedure
 Exit Sub
 
-errhandler:
+ErrHandler:
 MsgBox errmsg0 & " " & Error(Err)
 End
 'end procedure
@@ -679,7 +679,7 @@ return_value:
     'exit procedure
     Exit Function
     
-errhandler:
+ErrHandler:
     MsgBox errmsg0 & " " & Error(Err)
     End
 
@@ -688,7 +688,7 @@ End Function
 
 Public Function commaSeparateValues(rs0 As Recordset, Optional xlsvalues As Boolean = True, Optional dbtype0 As dbType = oracledb) As String
 ' convert RecordSet of Name,Value pairs to comma seperated string
-    On Error GoTo errhandler
+    On Error GoTo ErrHandler
     errmsg0 = "error in function db.commaSeparateValues"
 
     'parameter declaration
@@ -710,7 +710,7 @@ return_value:
     commaSeparateValues = str0
     'exit procedure
     Exit Function
-errhandler:
+ErrHandler:
     MsgBox errmsg0 & " " & Error(Err)
     End
 'end procedure
@@ -718,7 +718,7 @@ End Function
 
 Public Function xlToDBvalue(xlvalue, dbType As dbType, Optional defvalue As String = "*", Optional force_string As Boolean = False)
 ' convert excel value with type `VarType` to numeric or string representation that database `dbType` can interprete
-On Error GoTo errhandler
+On Error GoTo ErrHandler
 errmsg0 = "error in function db.xlToDBvalue"
 
 'body
@@ -772,7 +772,7 @@ xlToDBvalue = xlvalue
 'exit procedure
 Exit Function
 
-errhandler:
+ErrHandler:
 MsgBox errmsg0 & " " & Error(Err)
 End
 
@@ -781,7 +781,7 @@ End Function
 
 Public Function xl_to_xlsdb_value(xlvalue)
 
-On Error GoTo errhandler
+On Error GoTo ErrHandler
 errmsg0 = "error in function db.xl_to_xlsdb_value"
 
 'body
@@ -816,7 +816,7 @@ xl_to_xlsdb_value = xlvalue0
 'exit procedure
 Exit Function
 
-errhandler:
+ErrHandler:
 MsgBox errmsg0 & " " & Error(Err)
 End
 
@@ -834,7 +834,7 @@ Sub test_getExcelConn()
 
     Dim fl0 As File
     Dim fs0 As New filesystemobject: Set fs0 = New filesystemobject
-    filePath = zz_env.VDMI_TESTDATAPATH & "/ISAH_mock_tables.xlsx"
+    filePath = zz_env.getVDMIDataPath() & "/ISAH_mock_tables.xlsx"
     Set fl0 = fs0.GetFile(filePath)
     
     Dim conn As New ADODB.Connection, rs0 As New ADODB.Recordset, sqlconn As New ADODB.Connection

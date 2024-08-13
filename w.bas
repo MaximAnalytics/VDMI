@@ -30,7 +30,7 @@ Sub test_w_functions()
     ' 1. workbook
     Dim wbname As String
     wbname = "template"
-    w.createMacroEnabledTemplate wbname, zz_env.VDMI_DATAPATH, False
+    w.createMacroEnabledTemplate wbname, zz_env.getVDMIDataPath(), False
     
     ' ws_copy
     w.copy_ws "base", "base2", True

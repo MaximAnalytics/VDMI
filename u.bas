@@ -7,6 +7,8 @@
 'remove_dollar_sign(s) => Returns a string with all dollar signs removed from s.
 'printTemplateString(params() As Variant) => Prints a string with placeholders replaced by parameter values.
 'printTypename(x) => Prints the data type name of x.
+' 2. Object attributes: getAttr, hasAttr, setAttr
+' 3. Objectlist functions
 
 Sub test_utilities()
     ' Test isnull function
@@ -32,6 +34,20 @@ Sub test_utilities()
     Debug.Assert mask(False, "Visible") = Empty
     Debug.Assert mask(True, 123) = 123
     Debug.Assert mask(False, 123) = Empty
+    
+    ' Test Object attribute functions
+    Dim ws0 As Worksheet, rng0 As Range
+    Set ws0 = w.get_or_create_worksheet("test_ranges", ThisWorkbook)
+    Set rng0 = ws0.Cells(1, 1)
+    Debug.Assert u.hasAttr(rng0, "value")
+    Call u.setAttr(rng0, "value", 1)
+    Debug.Assert u.getAttr(rng0, "value") = 1
+    
+    ' Test Objectlist functions
+    Dim wsNames As collection
+    Set wsNames = u.GetObjectPropertyList(Worksheets, "name")
+    Debug.Assert clls.item_exists("test_ranges", wsNames)
+    w.delete_worksheet "test_ranges", ThisWorkbook
 End Sub
 
 ' Logical checks: if_empty_missing=> checks if x is empty, missing, nothing or empty string
@@ -147,4 +163,87 @@ End Sub
 
 Sub printTypename(x)
     Debug.Print TypeName(x)
+End Sub
+
+' 2 Object attributes: getAttr, hasAttr, setAttr
+Public Function getAttr(obj As Object, attrName As String) As Variant
+    On Error GoTo ErrHandler
+    getAttr = CallByName(obj, attrName, VbGet)
+    Exit Function
+ErrHandler:
+    getAttr = CVErr(xlErrValue)
+End Function
+
+Public Function hasAttr(obj As Object, attrName As String) As Boolean
+    On Error Resume Next
+    Dim temp As Variant
+    temp = CallByName(obj, attrName, VbGet)
+    hasAttr = (Err.Number = 0)
+    Err.clear
+End Function
+
+Public Function setAttr(obj As Object, attrName As String, value As Variant) As Boolean
+    On Error GoTo ErrHandler
+    CallByName obj, attrName, VbLet, value
+    setAttr = True
+    Exit Function
+ErrHandler:
+    setAttr = False
+End Function
+
+' 3. Objectlist functions
+Public Function Apply(objectList, func As String, ParamArray args() As Variant) As collection
+    Dim result As New collection
+    Dim item As Variant
+    Dim output As Variant
+    Dim i As Integer
+    Dim params() As Variant
+    
+    ' Loop through each item in the collection
+    For Each item In objectList
+        ' Build the parameter array dynamically
+        If UBound(args) > -1 Then
+            ReDim params(0 To UBound(args))
+            For i = LBound(args) To UBound(args)
+                params(i) = args(i)
+            Next i
+        Else
+            ReDim params(0 To 0)
+        End If
+        
+        ' Apply the function to the item using Application.Run
+        output = Application.Run(func, item, "value")
+        ' Add the result to the result collection
+        result.Add output
+    Next item
+    
+    ' Return the result collection
+    Set Apply = result
+End Function
+
+Public Function GetObjectPropertyList(objectList, propName As String) As collection
+    Dim result As New collection
+    Dim item As Variant
+    Dim output As Variant
+    Dim i As Integer
+    Dim func As String
+
+    ' Loop through each item in the collection
+    For Each item In objectList
+        ' Apply the function to the item using Application.Run
+        func = "getAttr"
+        output = Application.Run(func, item, propName)
+        ' Add the result to the result collection
+        result.Add output
+    Next item
+    
+    ' Return the result collection
+    Set GetObjectPropertyList = result
+End Function
+
+Sub test()
+Dim col As New collection
+Dim params() As Variant
+ReDim params(0 To 0)
+params(0) = col
 End Sub
