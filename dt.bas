@@ -182,3 +182,4 @@ Function set_date_timepart(date0 As Date, Optional timepart As String = "00:00")
     ' Combine the date and time to create a new Date value
     set_date_timepart = datePart + timepart
 End Function
+

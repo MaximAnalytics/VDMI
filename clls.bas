@@ -529,3 +529,4 @@ Function ItemsToCollection(ParamArray items()) As collection
     ' Return the collection with all items added
     Set ItemsToCollection = result
 End Function
+

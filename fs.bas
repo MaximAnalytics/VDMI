@@ -72,6 +72,7 @@ Sub tests_fs()
     
     'clean up
     fs.deleteCodeModule testModuleName
+    fs.deleteFile testFileName, testFilePath
     
     Debug.Print "tests_fs completed!"
 End Sub
@@ -549,4 +550,3 @@ Public Sub updateCodeModules(module_files As String, path As String)
        fs.updateCodeModule CStr(moduleNameArray(i)), path
     Next i
 End Sub
-

@@ -108,3 +108,4 @@ Function regexp_match(s As String, pattern As String) As Boolean
     regex.pattern = pattern
     regexp_match = regex.test(s)
 End Function
+

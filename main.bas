@@ -3565,3 +3565,5 @@ Sub init_articles_per_pallet()
       main.btn_isah_update_aantal_per_pallet_Click False
    End If
 End Sub
+
+

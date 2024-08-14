@@ -55,3 +55,4 @@ ErrorHandler:
     ' If an error occurs, return the default value
     getRatio = defvalue
 End Function
+

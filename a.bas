@@ -1498,3 +1498,4 @@ Function AppendColumn(arr0 As Variant, Optional values As Variant = "", Optional
     AppendColumn = arr
 End Function
 
+
