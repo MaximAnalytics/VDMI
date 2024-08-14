@@ -47,3 +47,4 @@ Function pathJoin(ParamArray paths() As Variant) As String
     ' Return the joined path
     pathJoin = joinedPath
 End Function
+

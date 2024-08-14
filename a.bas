@@ -1314,7 +1314,6 @@ Function RemoveNullsFromArray(arr As Variant, ParamArray filterColumns() As Vari
     If a.num_array_rows(arr) < 2 Then
        Debug.Print "RemoveNullsFromArray: arr has no records"
        RemoveNullsFromArray = arr
-       Exit Function
     End If
     
     filteredArr = a.get_array_row(arr, LBound(arr, 1))

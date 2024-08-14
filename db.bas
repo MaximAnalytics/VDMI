@@ -35,7 +35,6 @@ Dim errmsg0 As String
 'xlToDBvalue(xlvalue, dbType, defvalue, force_string) => Converts an Excel value to a database-compatible string or numeric representation.
 'xl_to_xlsdb_value(xlvalue) => Converts an Excel value to a string representation compatible with Excel database queries.
 
-
 ' 0. enumerations
 Public Enum dbType
 [_first] = 1
@@ -44,6 +43,10 @@ mysql = 2
 mssql = 3
 [_last] = 3
 End Enum
+
+Public Sub test_db()
+    
+End Sub
 
 ' 1. connections: connect to MSSQL database, connect to excel file as database
 Function openMSSQLconn(driver As String, server As String, dbname As String, un As String, pw As String) As Object
@@ -834,7 +837,7 @@ Sub test_getExcelConn()
 
     Dim fl0 As File
     Dim fs0 As New filesystemobject: Set fs0 = New filesystemobject
-    filePath = zz_env.getVDMIDataPath() & "/ISAH_mock_tables.xlsx"
+    filePath = zz_env.VDMI_TESTDATAPATH & "/ISAH_mock_tables.xlsx"
     Set fl0 = fs0.GetFile(filePath)
     
     Dim conn As New ADODB.Connection, rs0 As New ADODB.Recordset, sqlconn As New ADODB.Connection

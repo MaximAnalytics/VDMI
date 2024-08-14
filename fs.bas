@@ -69,8 +69,6 @@ Sub tests_fs()
     
     fs.updateCodeModule testFileName, testFilePath
     Debug.Assert fs.moduleExist(testModuleName) = True
-    'Debug.Assert Not ThisWorkbook.VBProject.VBComponents(testModuleName) Is Nothing
-    
     
     'clean up
     fs.deleteCodeModule testModuleName
@@ -548,6 +546,7 @@ Public Sub updateCodeModules(module_files As String, path As String)
     
     ' Loop through each module file name in the array and update or import its content
     For i = LBound(moduleNameArray) To UBound(moduleNameArray)
-       fs.updateCodeModule moduleNameArray(i), path
+       fs.updateCodeModule CStr(moduleNameArray(i)), path
     Next i
 End Sub
+

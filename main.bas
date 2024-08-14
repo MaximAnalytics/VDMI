@@ -141,7 +141,7 @@ Global Const ISAH_STAGING_COLUMNS = "Productieorder;Starttijd;Eindtijd;Resources
 Global Const ISAH_STAGING_COLUMNS_DB_NAMES = "ProdHeaderOrdNr;StartDate;EndDate;MachGrpCode;Qty;Duur"
 Global Const ISAH_STAGING_CAGGRP_COLUMN = "CAPGRP"
 Global Const ISAH_STAGING_UPDATE_COLUMNS = "match_prod_header;StartDate_header;EndDate_header;ProdHeaderDossierCode;match_prod_boo;StartDate_boo;EndDate_boo;next_StartDate_header;next_Enddate_header;check_dates_header;next_StartDate_boo;next_Enddate_boo;check_dates_boo;next_StartTime_boo;next_StandCapacity_boo;next_MachPlanTime_boo;check_ProdBOOStatusCode"
-Global Const ISAH_STAGING_UPDATE_COLUMNS_FORMATS = "0;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;General;0;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;0;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;0;General;0;0;General"
+Global Const ISAH_STAGING_UPDATE_COLUMNS_FORMATS = "0;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;0;0;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;0;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;0;General;0;0;General"
 
 Global Const ISAH_STAGING_RANGE_NAME = "isah_staging_orders_range"
 Global Const ISAH_STAGING_ORDERNR_INDEX = 1
@@ -1974,7 +1974,8 @@ Function getISAHprodheader() As String
     dbname = main.getISAHdbname()
     full_table_name = "[@1].[dbo].[@2]"
     dbprofile = main.getISAHProfileName()
-    If dbprofile = "JKR" Then
+    'TODO: use function a.InList(dbprofile, JKR;JKR2)
+    If dbprofile = "JKR" Or dbprofile = "JKR2" Then
       table_name = "T_ProductionHeader_TEST"
     ElseIf dbname = "NewMultifill" Or dbname = "Testmultifill" Then
       table_name = "T_ProductionHeader"
@@ -1991,7 +1992,8 @@ Function getISAHprodboo() As String
     dbname = main.getISAHdbname()
     full_table_name = "[@1].[dbo].[@2]"
     dbprofile = main.getISAHProfileName()
-    If dbprofile = "JKR" Then
+    'TODO: use function a.InList(dbprofile, JKR;JKR2)
+    If dbprofile = "JKR" Or dbprofile = "JKR2" Then
       table_name = "T_ProdBillOfOper_TEST"
     ElseIf dbname = "NewMultifill" Or dbname = "Testmultifill" Then
       table_name = "T_ProdBillOfOper"
@@ -2008,7 +2010,8 @@ Function getISAHprodbom() As String
     dbname = main.getISAHdbname()
     full_table_name = "[@1].[dbo].[@2]"
     dbprofile = main.getISAHProfileName()
-    If dbprofile = "JKR" Then
+    'TODO: use function a.InList(dbprofile, JKR;JKR2)
+    If dbprofile = "JKR" Or dbprofile = "JKR2" Then
       table_name = "T_ProdBillOfMat_TEST"
     ElseIf dbname = "NewMultifill" Or dbname = "Testmultifill" Then
       table_name = "T_ProdBillOfMat"
@@ -2025,7 +2028,8 @@ Function getISAHpart() As String
     dbname = main.getISAHdbname()
     full_table_name = "[@1].[dbo].[@2]"
     dbprofile = main.getISAHProfileName()
-    If dbprofile = "JKR" Then
+    'TODO: use function a.InList(dbprofile, JKR;JKR2)
+    If dbprofile = "JKR" Or dbprofile = "JKR2" Then
       table_name = "T_Part_BasicMat"
     ElseIf dbname = "NewMultifill" Or dbname = "Testmultifill" Then
       table_name = "T_Part"
@@ -2072,7 +2076,6 @@ Sub isah_export_stage_orders()
     ' sheets: ISAH staging and Template
     Set ws0 = wb0.Worksheets(main.ISAH_STAGING_SHEET_NAME)
     w.clearWorksheet ws0, wb0
-    r.create_named_range main.ISAH_STAGING_RANGE_NAME, ws0.name, "A1", clear:=False
     arrForProductieOrder = main.get_isah_input_range()
 
     ' append all capgrp order ranges to array `orders_arr_all`
@@ -2130,12 +2133,6 @@ next_capgrp_sheet:
     ' in result array `orders_arr_all`, filter out all rows where ProdHeaderOrdNr is NULL (Empty or '')
     OrdersWithOrdNrArray = a.RemoveNullsFromArray(orders_arr_all, "ProdHeaderOrdNr")
     
-    'TODO a.ArrayIsNull()
-    If a.num_array_rows(OrdersWithOrdNrArray) < 1 Then
-       Debug.Print "array is null: OrdersWithOrdNrArray"
-       Exit Sub
-    End If
-
     ' paste array `orders_arr_all` and create named range `main.ISAH_STAGING_RANGE_NAME`
     a.paste_array OrdersWithOrdNrArray, "A1", ws0
     r1 = a.num_array_rows(OrdersWithOrdNrArray)
@@ -2752,12 +2749,11 @@ Sub isah_export_update_prodbom()
     Dim updateStatements As New collection
     Dim sqlUpdate As Variant
     Dim wb0 As Workbook: Set wb0 = ThisWorkbook
+    Dim sql0 As String
     
     ' Define the source and target tables
     source_table = "EXPORT_ISAH"
     target_table = main.getISAHprodbom()
-    
-    Dim sql0 As String
     
     ' Query the distinct values of 'ProdHeaderDossierCode' and 'Startdate_header' from the source table
     Dim xlsconn As New ADODB.Connection
@@ -2818,7 +2814,7 @@ End Sub
 
 Sub isah_export_check_bom_dates()
 
-    ' 1 get ProdBillOfMat checks from ISAH, write to sheet main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET
+    ' 1. get ProdBillOfMat checks from ISAH, write to sheet main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET
     Dim conn0 As ADODB.Connection, sql0 As String
     sql0 = main_isah_queries.check_ProdBillOfMat(main.getISAHprodbom())
     Set conn0 = main.getISAHconnection()
@@ -2829,9 +2825,16 @@ End Sub
 
 Sub isah_export_match_bom_dates()
 
-    ' 2 join with ISAH_EXPORT with ISAH_CHECK_BOM_REQUIRED_DATE_SHEET, add check column and write to ISAH_MATCH_BOM_REQUIRED_DATE_SHEET
-    Dim conn0 As ADODB.Connection, sql0 As String, rs0 As ADODB.Recordset
+    ' 2. join with ISAH_EXPORT with ISAH_CHECK_BOM_REQUIRED_DATE_SHEET, add check column and write to ISAH_MATCH_BOM_REQUIRED_DATE_SHEET
+    Dim conn0 As ADODB.Connection, sql0 As String, rs0 As ADODB.Recordset, rng0 As Range
     sql0 = join_ISAH_EXPORT_CHECK_PROD_BOM()
+    
+    ' check if table main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET has actually been filled
+    Set rng0 = ThisWorkbook.Sheets(main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET).Cells(1, 1)
+    If rng0.value = "" Then
+       Debug.Print str.subInStr("Sheet not filled: @1", main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET)
+       Exit Sub
+    End If
     
     Set conn0 = db.openExcelConn(ThisWorkbook)
     db.writeQueryToSheet conn0, sql0, main.ISAH_MATCH_BOM_REQUIRED_DATE_SHEET
@@ -2854,7 +2857,7 @@ Sub isah_export_match_bom_dates()
     Dim formulaDefinition As String, formulaRange As Range, lookupColumnAddress As String, lookupRangeAddress As String
     formulaTemplateString = "=VLOOKUP(@1,@2,@3,FALSE)"
     lookupColumnAddress = Replace(IsahExportRange.Cells(2, 1).address, "$", "")
-    lookupRangeAddress = Replace(r.getRangeFullAddress(checkRange), "$", "")
+    lookupRangeAddress = r.getRangeFullAddress(checkRange, removeFileName:=True, removeDollarSigns:=False)
     formulaDefinition = str.subInStr(formulaTemplateString, lookupColumnAddress, lookupRangeAddress, checkColumnIndex)
     Set formulaRange = checkColumn
     If formulaRange.Rows.count > 1 Then
@@ -2873,14 +2876,6 @@ End Sub
 Public Sub isah_export_run_all()
     ' prepare the staging sheet `EXPORT_ISAH` using capgrp sheets
     main.isah_export_stage_orders
-    
-    ' check if then staging sheet is filled if not exit sub
-    Dim ordersRange As Range: Set ordersRange = r.get_range(main.ISAH_STAGING_RANGE_NAME, wb:=ThisWorkbook)
-    If ordersRange.Rows.count <= 1 Then
-       MsgBox str.subInStr("No order records on staging sheet `@1`", main.ISAH_STAGING_SHEET_NAME)
-       ThisWorkbook.Sheets(main.CONTROL_SHEET_NAME).Activate
-       Exit Sub
-    End If
     
     ' connect to ISAH database and update the MachGrpCode, Qty and StandCapacity in `ProdBillOfOperation`
     main.isah_export_update_prodboo_grp
@@ -2909,7 +2904,7 @@ End Sub
 Sub test_()
     ' check RequiredDate in `ProdBillOfMat` table
     main.isah_export_check_bom_dates
-    main.isah_export_match_bom_dates
+    'main.isah_export_match_bom_dates
 End Sub
 
 ' ISAH ARTICLE IMPORT
@@ -2956,6 +2951,9 @@ Sub isah_import_articles()
     
         ' Set column formats
         r.format_columns ThisWorkbook.Sheets(main.NUMBER_PER_PALLET_SHEET_NAME), main.MAP_NUMBER_PER_PALLET_COL_TO_FMT
+        
+        ' calculate worksheet such that references are updated
+        Application.Calculate
     Else
         ' Show message box if no articles found
         MsgBox main.ERR_MSG_NO_ARTICLES

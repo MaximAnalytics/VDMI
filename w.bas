@@ -436,12 +436,12 @@ Sub create_empty_workbook(new_workbook_name As String, path As String)
     codeModule.DeleteLines 1, codeModule.CountOfLines
     
     ' Remove all VBA modules starting with "main" or "Module"
-    Dim VBComponent As VBComponent
-    For Each VBComponent In ThisWorkbook.VBProject.VBComponents
-        If left(VBComponent.name, 4) = "main" Or left(VBComponent.name, 6) = "Module" Then
-            ThisWorkbook.VBProject.VBComponents.Remove VBComponent
+    Dim vbComponent As vbComponent
+    For Each vbComponent In ThisWorkbook.VBProject.VBComponents
+        If left(vbComponent.name, 4) = "main" Or left(vbComponent.name, 6) = "Module" Then
+            ThisWorkbook.VBProject.VBComponents.Remove vbComponent
         End If
-    Next VBComponent
+    Next vbComponent
 
     ' Save current workbook as path\new_workbook_name
     ThisWorkbook.SaveAs path & "\" & new_workbook_name
