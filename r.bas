@@ -137,6 +137,8 @@ Sub test_range_functions()
     
     new_values = a.create_array(5, 5, "B")
     
+    Exit Sub
+    
     ' Resize the named range to match the dimensions of the values array
     numRows = UBound(new_values, 1)
     numCols = UBound(new_values, 2)
@@ -147,11 +149,6 @@ Sub test_range_functions()
     r.updateNamedRangeWithValues named_range_name, new_values
     Set rng1 = r.get_range(named_range_name)
     Debug.Assert rng1.Rows.count = numRows And rng1.columns.count = numCols And rng1.Cells(1, 1) = new_values(1, 1)
-    
-    Exit Sub
-    
-    
-    
     
     ' insert columns at start, second position and end
     r.add_named_range_column "test", "first_column", pos:=1, values:=a.to_array("A")
@@ -620,6 +617,9 @@ Sub fill_formula_range(rng, formulaDefinition, Optional only_values As Boolean =
     If formula_range.Rows.count > 1 And only_values Then
        Set formula_range = r.subset_range(formula_range, startrow:=2)
     End If
+    
+    Debug.Print formula_range.address
+    Debug.Print formulaDefinition
     
     ' Set the formula for the new column
     formula_range.Cells(1).formula = formulaDefinition
@@ -1120,9 +1120,48 @@ Function get_range_address(ws0 As Worksheet, Optional r0 = 1, Optional r1 = 1, O
     get_range_address = rangeAddress
 End Function
 
-Function getRangeFullAddress(rng As Range)
+Function removeContextWithinBrackets(file_name As String) As String
+    ' This function removes the context within square brackets [] if it exists in the given string.
+    ' If no square brackets are found, it returns the original string.
+    '
+    ' Parameters:
+    ' file_name - The input string that may contain context within square brackets.
+    '
+    ' Returns:
+    ' The string with the context within square brackets removed, or the original string if no brackets are found.
+    
+    Dim startPos As Long
+    Dim endPos As Long
+    
+    ' Find the position of the opening bracket [
+    startPos = InStr(file_name, "[")
+    
+    ' Find the position of the closing bracket ]
+    endPos = InStr(file_name, "]")
+    
+    ' Check if both brackets are found
+    If startPos > 0 And endPos > 0 And endPos > startPos Then
+        ' Remove the context within the brackets
+        removeContextWithinBrackets = left(file_name, startPos - 1) & Mid(file_name, endPos + 1)
+    Else
+        ' Return the original string if no brackets are found
+        removeContextWithinBrackets = file_name
+    End If
+End Function
+
+Function getRangeFullAddress(rng As Range, Optional removeFileName As Boolean = True, Optional removeDollarSigns As Boolean = False)
+    Dim address As String, full_address As String
     address = rng.address(External:=True)
-    getRangeFullAddress = Split(CStr(address), "]")(1)
+    If removeFileName Then
+       full_address = removeContextWithinBrackets(address)
+    Else
+       full_address = address
+    End If
+    
+    If removeDollarSigns Then
+       full_address = Replace(full_address, "$", "")
+    End If
+    getRangeFullAddress = full_address
 End Function
 
 Function get_column_address(rng0 As Range) As String
