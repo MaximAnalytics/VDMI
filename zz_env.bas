@@ -6,8 +6,9 @@ Global Const MSSQL_HOME_CONN_STR = "Driver={ODBC Driver 17 for SQL Server};Serve
 
 ' code modules
 Global Const MODULES_TO_EXPORT = "a;chrt;clls;ctr;db;dict;dt;fs;m;os;r;str;u;vb;w;zz_env"
-Global Const VDMI_MODULES_TO_EXPORT = "main;main_isah_queries;database_control;state_control;ThisWorkbook;Sheet8;tests"
+Global Const VDMI_MODULES_TO_EXPORT = "main;main_isah_queries;database_control;state_control;ThisWorkbook;Sheet8;Sheet21;tests"
 Global Const MODULES_TO_IMPORT = "a.bas;chrt.bas;clls.bas;ctr.bas;db.bas;dict.bas;dt.bas;m.bas;os.bas;r.bas;str.bas;u.bas;vb.bas;w.bas"
+Global Const VDMI_MODULES_TO_IMPORT = "main.bas;main_isah_queries.bas;database_control.bas;state_control.bas;ThisWorkbook.bas;Sheet8.bas;Sheet21.bas;tests.bas"
 
 Sub test_zz_env()
     Debug.Assert zz_env.getVDMIGithub() = "C:\Users\JoelKroodsma\Documents\GitHub\VDMI"
@@ -15,14 +16,13 @@ End Sub
 
 ' export modules and export as template
 Sub export_vb_codemodule_code()
-    'fs.exportModuleCodes MODULES_TO_EXPORT, getVDMICodePath(), "txt"
-    'fs.exportModuleCodes MODULES_TO_EXPORT, getVDMICodePath()
     fs.exportModuleCodes MODULES_TO_EXPORT, getVDMIGithub()
     fs.exportModuleCodes VDMI_MODULES_TO_EXPORT, getVDMIGithub()
 End Sub
 
 Sub update_vb_codemodule_code()
-    fs.updateCodeModules "fs.bas", getVDMIGithub()
+    fs.updateCodeModules MODULES_TO_IMPORT, getVDMIGithub()
+    fs.updateCodeModules VDMI_MODULES_TO_IMPORT, getVDMIGithub()
 End Sub
 
 Sub createExcelMacroTemplate()
@@ -67,5 +67,6 @@ End Function
 Function getExcelTemplatePath() As String
     getExcelTemplatePath = fs.getFirstValidPath(getHomePath(), "Programming\excel_templates")
 End Function
+
 
 
