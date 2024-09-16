@@ -1,3 +1,33 @@
+' Dictionary functions and subroutines
+
+' 0. Utilities
+' dict.printDictionaryKeyValue
+
+' 1. Logical
+
+' 2. Transformations
+'dict.invertDictionaryObject(dictObject)
+
+' 3. generators
+' dict.getDictionaryFromString => generates dictionary from string
+
+' 4. combine, merge, join, unique
+
+Sub test_dict_functions()
+    Dim dictObject As Scripting.Dictionary, input_string As String
+    input_string = "key1=value1;key2=value2"
+    Set dictObject = dict.getDictionaryFromString(input_string)
+    dict.printDictionaryKeyValue dictObject
+    Debug.Assert dictObject.count = 2
+    Debug.Assert dictObject.item("key1") = "value1"
+    ' test `invertDictionaryObject`
+    dict.printDictionaryKeyValue dict.invertDictionaryObject(dictObject)
+    Debug.Assert dict.invertDictionaryObject(dictObject).item("value1") = "key1"
+
+End Sub
+
+
+
 ' This function takes an input string and delimiters for key-value pairs and items, and returns a dictionary object
 ' with keys and values populated based on the input string.
 '
@@ -24,12 +54,14 @@ Function getDictionaryFromString(input_string As String, Optional keyvalue_delim
         ' Separate each item by the key-value delimiter
         keyvaluepair = Split(items(i), keyvalue_delimiter)
         
-        ' Get key and value from the key-value pair
-        key = keyvaluepair(0)
-        value = keyvaluepair(1)
-        
-        ' Add to dictObj value with key
-        dictObj.Add key, value
+        If UBound(keyvaluepair) >= 1 Then
+            ' Get key and value from the key-value pair
+            key = keyvaluepair(0)
+            value = keyvaluepair(1)
+            
+            ' Add to dictObj value with key
+            dictObj.Add key, value
+        End If
     Next i
     
     ' Return the dictionary object
@@ -117,18 +149,5 @@ Function invertDictionaryObject(dictObj As Scripting.Dictionary) As Scripting.Di
     Set invertDictionaryObject = invertedDict
 End Function
 
-Sub test_dict_functions()
-Dim dictObject As Scripting.Dictionary, input_string As String
-input_string = "key1=value1;key2=value2"
-Set dictObject = dict.getDictionaryFromString(input_string)
-dict.printDictionaryKeyValue dictObject
-
-Debug.Assert dictObject.count = 2
-Debug.Assert dictObject.item("key1") = "value1"
-' test `invertDictionaryObject`
-dict.printDictionaryKeyValue dict.invertDictionaryObject(dictObject)
-Debug.Assert dict.invertDictionaryObject(dictObject).item("value1") = "key1"
-
-End Sub
 
 
