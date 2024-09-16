@@ -27,16 +27,18 @@
 '`test_create_empty_workbook()` => Tests the creation of an empty workbook with a default name and saves it to the current directory.
 
 Sub test_w_functions()
-    ' 1. workbook
     Dim wbname As String
-    wbname = "template"
-    w.createMacroEnabledTemplate wbname, zz_env.getVDMIDataPath(), False
-    
-    ' ws_copy
+
+    '1. worksheet getters, subsetters, generators
     w.copy_ws "base", "base2", True
     Debug.Assert w.sheet_exists("base2")
     w.delete_worksheet "base2"
     Debug.Assert Not w.sheet_exists("base2")
+    
+    ' 6. workbook generators, getters
+    wbname = "template"
+    w.createMacroEnabledTemplate wbname, zz_env.getVDMIDataPath(), False
+    
 End Sub
 
 ' 1. workbook

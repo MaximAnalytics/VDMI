@@ -28,7 +28,7 @@ End Sub
 Sub createExcelMacroTemplate()
     Dim wbname As String, wb1 As Workbook
     timestamp = dt.format_datetime(Now(), "yyyymmdd")
-    wbname = "template_" & timestamp
+    wbname = timestamp & "_template"
     w.createMacroEnabledTemplate wbname, getExcelTemplatePath(), False
     vb.copyModuleCodes ThisWorkbook, Workbooks(wbname), MODULES_TO_EXPORT
     Set wb1 = Workbooks(wbname)
@@ -44,12 +44,26 @@ Function getGithubPath() As String
     getGithubPath = fs.getFirstValidPath(GITHUBPATH)
 End Function
 
-Function getVDMIGithub() As String
-    getVDMIGithub = os.pathJoin(getGithubPath(), "VDMI")
-End Function
-
 Function getWorkPath() As String
     getWorkPath = fs.getFirstValidPath(WORKPATH)
+End Function
+
+' Excel templates, testdata
+Function getExcelTemplatePath() As String
+    getExcelTemplatePath = os.pathJoin(getHomePath(), "Programming\excel_templates")
+End Function
+
+Function getExcelTestDataFolder() As String
+    getExcelTestDataFolder = os.pathJoin(getHomePath(), "Programming\excel VBA\testdata")
+End Function
+
+Function getExcelTestDataFile() As String
+    getExcelTestDataFile = os.pathJoin(getExcelTestDataFolder(), "ISAH_mock_tables.xlsx")
+End Function
+
+' VDMI
+Function getVDMIGithub() As String
+    getVDMIGithub = os.pathJoin(getGithubPath(), "VDMI")
 End Function
 
 Function getVDMICodePath() As String
@@ -64,9 +78,6 @@ Function getVDMITestPath() As String
     getVDMITestPath = os.pathJoin(getWorkPath(), "VDMI\testdata")
 End Function
 
-Function getExcelTemplatePath() As String
-    getExcelTemplatePath = fs.getFirstValidPath(getHomePath(), "Programming\excel_templates")
-End Function
 
 
 

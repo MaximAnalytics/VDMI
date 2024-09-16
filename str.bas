@@ -4,31 +4,22 @@
 '4. Regexp
 
 Sub test()
-Debug.Print str.subInStr("some string @1, @2", 1, 2)
-
+    Debug.Assert str.subInStr("some string @1, @2", 1, 2) = "some string 1, 2"
+    Debug.Assert Not str.IsNull("A") And str.IsNull("")
+    
+    Debug.Assert IsArray(str.str_to_array("A,B")) And IsArray(str.str_to_array(Array("A", "B")))
+    
 End Sub
-
-Sub test_empty_string(Optional s As String)
-Debug.Print str.is_empty(s)
-End Sub
-
 
 ' String conversion
 ' str_to_array function
-Function str_to_array(str0) As Variant
-    Dim delimiter As String
-    delimiter = ","
+Function str_to_array(str0, Optional delimiter As String = ",") As Variant
     If VarType(str0) = vbString Then
         str_to_array = Split(str0, delimiter)
     ElseIf VarType(str0) = (vbVariant Or vbArray) Then
         str_to_array = str0
     Else
-        Dim arr0() As String
-        ReDim arr0(UBound(args))
-        For i = 0 To UBound(args)
-            arr0(i) = CStr(args(i))
-        Next i
-        str_to_array = arr0
+        Err.Raise 1001, "str_to_array", "str0 is not string or variant"
     End If
 End Function
 
@@ -54,8 +45,8 @@ Function str_array_len(str0) As Long
     str_array_len = UBound(arr0) - LBound(arr0) + 1
 End Function
 
-Function is_empty(s As String) As Boolean
-    is_empty = IsMissing(s) Or IsEmpty(s) Or s = ""
+Function IsNull(s As String) As Boolean
+    IsNull = IsMissing(s) Or IsEmpty(s) Or s = ""
 End Function
 
 ' String templating

@@ -12,10 +12,10 @@
 
 Sub test_utilities()
     ' Test isnull function
-    Debug.Assert isnull(Empty) = True
-    Debug.Assert isnull("") = True
-    Debug.Assert isnull("Hello") = False
-    Debug.Assert isnull(0) = False
+    Debug.Assert IsNull(Empty) = True
+    Debug.Assert IsNull("") = True
+    Debug.Assert IsNull("Hello") = False
+    Debug.Assert IsNull(0) = False
     
     ' Test nvl function
     Debug.Assert nvl(Empty, "Default") = "Default"
@@ -70,7 +70,7 @@ Function is_empty_missing(x As Variant) As Boolean
     is_empty_missing = False
 End Function
 
-Function isnull(x As Variant) As Boolean
+Function IsNull(x As Variant) As Boolean
     ' This function checks if the input variant is null.
     ' Null is defined as being an empty variant or an empty string.
     '
@@ -80,7 +80,7 @@ Function isnull(x As Variant) As Boolean
     ' Returns:
     ' True if x is null, False otherwise.
     
-    isnull = IsEmpty(x) Or (TypeName(x) = "String" And x = "")
+    IsNull = IsEmpty(x) Or (TypeName(x) = "String" And x = "")
 End Function
 
 Function nvl(x As Variant, y As Variant) As Variant
@@ -94,7 +94,7 @@ Function nvl(x As Variant, y As Variant) As Variant
     ' Returns:
     ' x if x is not null, y otherwise.
     
-    If isnull(x) Then
+    If IsNull(x) Then
         nvl = y
     Else
         nvl = x

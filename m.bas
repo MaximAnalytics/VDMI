@@ -12,9 +12,9 @@ Function Round_Up_to_Nearest_Fraction(n As Double, f As Double) As Double
 End Function
 
 Function round_up_to_nearest_quarter(n As Double) As Double
-Dim quarter_fraction As Double
-quarter_fraction = 1 / (24 * 4)
-round_up_to_nearest_quarter = Round_Up_to_Nearest_Fraction(n, quarter_fraction)
+    Dim quarter_fraction As Double
+    quarter_fraction = 1 / (24 * 4)
+    round_up_to_nearest_quarter = Round_Up_to_Nearest_Fraction(n, quarter_fraction)
 End Function
 
 Function gte_dbl(x As Double, y As Double) As Boolean
