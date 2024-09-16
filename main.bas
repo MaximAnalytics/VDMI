@@ -194,7 +194,7 @@ Sub init_capgrp_sheets(Optional capgrp_sheet_filter As String)
   For Each c In capgrp_sheets
      ' 0 select capgrp orders from input ISAH and copy to capgrp_sheet
      capgrp = c
-     If Not str.is_empty(capgrp_sheet_filter) And capgrp <> capgrp_sheet_filter Then
+     If Not str.IsNull(capgrp_sheet_filter) And capgrp <> capgrp_sheet_filter Then
         GoTo nextiteration
      ElseIf capgrp = capgrp_sheet_filter Then
         Debug.Print "using filter, initialize capgrp sheet: " + capgrp
@@ -1968,14 +1968,18 @@ Function getISAHProfileName() As String
     getISAHProfileName = ThisWorkbook.Worksheets(main.CONTROL_SHEET_NAME).Range(main.DATABASE_DROPDOWN_ADDR).value
 End Function
 
+' function to check if the profile is a home profile
+Function ISAHProfileIsHome(profile As String) As Boolean
+    ISAHProfileIsHome = a.ItemInArray(profile, Array("JKR", "JKR2"))
+End Function
+
 ' Function to get ISAH production header based on ISAHProfilename
 Function getISAHprodheader() As String
-    Dim dbname As String, table_name As String, full_table_name As String
+    Dim dbname As String, table_name As String, full_table_name As String, dbprofile As String
     dbname = main.getISAHdbname()
     full_table_name = "[@1].[dbo].[@2]"
     dbprofile = main.getISAHProfileName()
-    'TODO: use function a.InList(dbprofile, JKR;JKR2)
-    If dbprofile = "JKR" Or dbprofile = "JKR2" Then
+    If ISAHProfileIsHome(dbprofile) Then
       table_name = "T_ProductionHeader_TEST"
     ElseIf dbname = "NewMultifill" Or dbname = "Testmultifill" Then
       table_name = "T_ProductionHeader"
@@ -1988,12 +1992,11 @@ End Function
 
 ' Function to get ISAH production bill of operations based on ISAHProfilename
 Function getISAHprodboo() As String
-    Dim dbname As String, table_name As String, full_table_name As String
+    Dim dbname As String, table_name As String, full_table_name As String, dbprofile As String
     dbname = main.getISAHdbname()
     full_table_name = "[@1].[dbo].[@2]"
     dbprofile = main.getISAHProfileName()
-    'TODO: use function a.InList(dbprofile, JKR;JKR2)
-    If dbprofile = "JKR" Or dbprofile = "JKR2" Then
+    If ISAHProfileIsHome(dbprofile) Then
       table_name = "T_ProdBillOfOper_TEST"
     ElseIf dbname = "NewMultifill" Or dbname = "Testmultifill" Then
       table_name = "T_ProdBillOfOper"
@@ -2006,12 +2009,11 @@ End Function
 
 ' Function to get ISAH production bill of materials based on ISAHProfilename
 Function getISAHprodbom() As String
-    Dim dbname As String, table_name As String, full_table_name As String
+    Dim dbname As String, table_name As String, full_table_name As String, dbprofile As String
     dbname = main.getISAHdbname()
     full_table_name = "[@1].[dbo].[@2]"
     dbprofile = main.getISAHProfileName()
-    'TODO: use function a.InList(dbprofile, JKR;JKR2)
-    If dbprofile = "JKR" Or dbprofile = "JKR2" Then
+    If ISAHProfileIsHome(dbprofile) Then
       table_name = "T_ProdBillOfMat_TEST"
     ElseIf dbname = "NewMultifill" Or dbname = "Testmultifill" Then
       table_name = "T_ProdBillOfMat"
@@ -2024,12 +2026,11 @@ End Function
 
 ' Function to get ISAH T_Part based on ISAHProfilename
 Function getISAHpart() As String
-    Dim dbname As String, table_name As String, full_table_name As String
+    Dim dbname As String, table_name As String, full_table_name As String, dbprofile As String
     dbname = main.getISAHdbname()
     full_table_name = "[@1].[dbo].[@2]"
     dbprofile = main.getISAHProfileName()
-    'TODO: use function a.InList(dbprofile, JKR;JKR2)
-    If dbprofile = "JKR" Or dbprofile = "JKR2" Then
+    If ISAHProfileIsHome(dbprofile) Then
       table_name = "T_Part_BasicMat"
     ElseIf dbname = "NewMultifill" Or dbname = "Testmultifill" Then
       table_name = "T_Part"
