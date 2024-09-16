@@ -16,6 +16,7 @@ Dim errmsg0 As String
 'queryDB(conn0, sql0, close_connection, dbg) => Executes a SQL query using the provided connection and returns a Recordset.
 'queryFromWorkbook(sql0, xlsconn) => Executes a SQL query on an Excel workbook connection and returns a Recordset.
 'truncateTable(conn0, tabname) => Truncates the specified table in the database.
+'writeQueryToSheet(conn0 As Object, sql0 As String, wsName As String, Optional map_format_column_type As String = "")
 
 ' 3. Recordset:
 'printRecordset(rs0, print_datatypes, print_field_name) => Prints the contents of a Recordset to the debug output.
@@ -45,7 +46,38 @@ mssql = 3
 End Enum
 
 Public Sub test_db()
+Dim filePath As String, conn0 As ADODB.Connection, DataSourceString As String, ConnectionStringMap As Scripting.Dictionary, sql0 As String, rs0 As ADODB.Recordset
+
+    ' 1 connections
+    filePath = zz_env.getExcelTestDataFile()
+    Set conn0 = db.openExcelConn(filePath)
+    Set ConnectionStringMap = dict.getDictionaryFromString(conn0.ConnectionString)
+    DataSourceString = ConnectionStringMap.item("Data Source")
+    Debug.Assert DataSourceString = filePath
     
+    ' 2 data manipulation: DML
+    sql0 = "SELECT DISTINCT BasicMat FROM [T_Part_BasicMat$]"
+    Set rs0 = db.queryDB(conn0, sql0)
+    Debug.Assert RecordSetNumberRecords(rs0) = 317
+    recordsArr = db.RecordSetToArray(rs0)
+    Debug.Assert a.num_array_columns(recordsArr) = 1 And a.num_array_rows(recordsArr) = 318 ' 317 plus header row
+    
+    ' query empty recordset
+    sql0 = "SELECT DISTINCT BasicMat FROM [T_Part_BasicMat$] WHERE BasicMat<'0'"
+    Set rs0 = db.queryDB(conn0, sql0)
+    Debug.Assert RecordSetNumberRecords(rs0) = 0 And rs0.Fields.count = 1 And db.RecordsSetHasFields(rs0)
+    Debug.Assert a.ItemInArray("BasicMat", db.GetColumnNames(rs0))
+    a.printArray db.RecordSetToArray(rs0)
+    writeQueryToSheet conn0, sql0, "query"
+     
+    ' clean up
+    conn0.Close
+    w.delete_worksheet "query"
+    
+    '4 sqlwriters
+    Debug.Assert sqlWhereInCondition(Array("A", "B", "C"), "column", mssql) = "WHERE column IN ('A','B','C')"
+    
+        
 End Sub
 
 ' 1. connections: connect to MSSQL database, connect to excel file as database
@@ -100,8 +132,9 @@ If (TypeName(xls0) = "Workbook") Then
         End If
         End With
 ElseIf TypeName(xls0) = "String" Then
-    ' check if file name refers to File
+    ' check if file name refers to filePath
     filePath = xls0
+    fs.pathExist filePath, True
     Set fl0 = fs0.GetFile(filePath)
     GoTo chk_file
 ElseIf TypeName(xls0) = "File" Then
@@ -277,10 +310,8 @@ End Sub
 ' CREATE: send insert statement
 Public Function sqlInsertStatement(rs0 As Recordset, table_name As String, dbtype0 As dbType) As String
     ' construct insert statement from each record in RecordSet `rs0`
-    'On Error GoTo errhandler
     Dim sql0 As String, sql1 As String
-    errmsg0 = "error in function db.sqlInsertStatement"
-    
+
     'body
     'initialize
     c = 0
@@ -305,17 +336,10 @@ return_value:
     'exit procedure
     Exit Function
     
-ErrHandler:
-    MsgBox errmsg0 & " " & Error(Err)
-    End
-'end procedure
 End Function
 
 Public Function sqlSetCondition(record As Recordset, set_columns As String, dbtype0 As dbType) As String
 'construct set statement
-
-'On Error GoTo errhandler
-errmsg0 = "error in function db.sqlSetCondition"
 
 'parameter declaration
 Dim fieldNames0 As collection
@@ -335,19 +359,12 @@ sqlSetCondition = str0
 'exit procedure
 Exit Function
 
-ErrHandler:
-MsgBox errmsg0 & " " & Error(Err)
-End
-
 'end procedure
 End Function
 
 
 Public Function sqlWhereCondition(record As Recordset, where_columns As String, dbtype0 As dbType, Optional force_string As Boolean = False) As String
 'construct set statement
-
-'On Error GoTo errhandler
-errmsg0 = "error in function db.sqlWhereCondition"
 
 'parameter declaration
 Dim fieldNames0 As collection
@@ -366,10 +383,6 @@ sqlWhereCondition = str0
 
 'exit procedure
 Exit Function
-
-ErrHandler:
-MsgBox errmsg0 & " " & Error(Err)
-End
 
 'end procedure
 End Function
@@ -394,9 +407,7 @@ End Function
 
 Public Function sqlUpdateStatement(rs0 As Recordset, table_name As String, set_columns As String, where_columns As String, dbtype0 As dbType, Optional force_string As Boolean = False) As String
     ' construct insert statement from each record in RecordSet `rs0`
-    'On Error GoTo errhandler
     Dim sql0 As String, sql1 As String, set_condition As String, where_condition As String
-    errmsg0 = "error in function db.sqlUpdateStatement"
     
     'body
     'initialize
@@ -422,19 +433,12 @@ return_value:
     'exit procedure
     Exit Function
     
-ErrHandler:
-    MsgBox errmsg0 & " " & Error(Err)
-    End
-'end procedure
 End Function
-
 
 ' READ: send select statement and return recordset
 Public Function queryDB(conn0 As ADODB.Connection, sql0 As String, Optional close_connection As Boolean = False, Optional dbg As Boolean = False) As ADODB.Recordset
     'parameter declaration
     Dim rs0 As ADODB.Recordset: Set rs0 = New ADODB.Recordset
-    'On Error GoTo errhandler
-    errmsg0 = "error in function db.queryDB"
     
     'body
     ' if conn0 is closed then open
@@ -467,11 +471,6 @@ return_value:
     'exit procedure
     Exit Function
     
-ErrHandler:
-    MsgBox errmsg0 & " " & Error(Err)
-    End
-
-'end procedure
 End Function
 
 Sub writeQueryToSheet(conn0 As Object, sql0 As String, wsName As String, Optional map_format_column_type As String = "")
@@ -494,8 +493,9 @@ Sub writeQueryToSheet(conn0 As Object, sql0 As String, wsName As String, Optiona
     ' Execute the SQL query
     Set rs0 = db.queryDB(conn0, sql0, False)
     
-    ' Check if the recordset is empty
-    If db.RecordSetNumberRecords(rs0) = 0 Then
+    ' Check if the recordset is empty and RecordsSetHasFields(rs)
+    If db.RecordSetNumberRecords(rs0) = 0 And Not db.RecordsSetHasFields(rs0) Then
+       Debug.Print "writeQueryToSheet: Recordset contains no fields"
        Exit Sub
     End If
     arr0 = db.RecordSetToArray(rs0)
@@ -530,10 +530,29 @@ Public Sub truncateTable(conn0 As ADODB.Connection, tabname)
 End Sub
 
 ' 3. Recordset
-Public Sub printRecordset(rs0 As Recordset, Optional print_datatypes As Boolean = False, Optional print_field_name As Boolean = True)
-'On Error GoTo errhandler
-errmsg0 = "error in sub db.print_recordset_records"
+Public Function GetColumnNames(rs As ADODB.Recordset) As Variant
+    Dim colNames() As String
+    Dim i As Integer
+    
+    ' Check if the recordset is open and contains fields
+    If Not (rs Is Nothing) And rs.State = adStateOpen And rs.Fields.count > 0 Then
+        ' Resize the array to hold all column names
+        ReDim colNames(1 To rs.Fields.count)
+        
+        ' Loop through the fields and retrieve the column names
+        For i = 1 To rs.Fields.count
+            colNames(i) = rs.Fields(i - 1).name
+        Next i
+        
+        ' Return the column names as a variant array
+        GetColumnNames = colNames
+    Else
+        ' If the recordset is not valid, return an empty array
+        GetColumnNames = Array()
+    End If
+End Function
 
+Public Sub printRecordset(rs0 As Recordset, Optional print_datatypes As Boolean = False, Optional print_field_name As Boolean = True)
 'parameter declaration
 Dim r0 As Long
 
@@ -584,9 +603,6 @@ End With
 'exit procedure
 Exit Sub
 
-ErrHandler:
-MsgBox errmsg0 & " " & Error(Err)
-End
 'end procedure
 End Sub
 
@@ -599,17 +615,10 @@ Function RecordSetNumberRecords(rs0 As ADODB.Recordset) As Long
     
     ' Get the number of records in the recordset
     RecordSetNumberRecords = rs0.RecordCount
-        
-    ' Save the current position in the recordset
-    'Dim currentPosition As Variant
-    'currentPosition = rs0.AbsolutePosition
-    
-    ' Move to the last record in the recordset
-    ' rs0.MoveLast
-    
+End Function
 
-    ' Move back to the original position in the recordset
-    ' rs0.AbsolutePosition = currentPosition
+Public Function RecordsSetHasFields(rs0 As ADODB.Recordset) As Boolean
+     RecordsSetHasFields = (Not a.ArrayIsEmpty(GetColumnNames(rs0)))
 End Function
 
 Function RecordSetToArray(rs0 As ADODB.Recordset) As Variant
@@ -664,8 +673,6 @@ End Function
 
 ' 9. utilities
 Public Function commaSeparateFields(rs0 As Recordset) As String
-    'On Error GoTo errhandler
-    errmsg0 = "error in function db.commaSeparateFields"
     'parameter declaration
     infields = ""
     'body
@@ -682,19 +689,12 @@ return_value:
     'exit procedure
     Exit Function
     
-ErrHandler:
-    MsgBox errmsg0 & " " & Error(Err)
-    End
-
 'end procedure
 End Function
 
 Public Function commaSeparateValues(rs0 As Recordset, Optional xlsvalues As Boolean = True, Optional dbtype0 As dbType = oracledb) As String
-' convert RecordSet of Name,Value pairs to comma seperated string
-    On Error GoTo ErrHandler
-    errmsg0 = "error in function db.commaSeparateValues"
-
-    'parameter declaration
+    ' convert RecordSet of Name,Value pairs to comma seperated string
+    ' parameter declaration
     infields = ""
     'body
     For Each fll In rs0.Fields
@@ -713,16 +713,11 @@ return_value:
     commaSeparateValues = str0
     'exit procedure
     Exit Function
-ErrHandler:
-    MsgBox errmsg0 & " " & Error(Err)
-    End
-'end procedure
+
 End Function
 
 Public Function xlToDBvalue(xlvalue, dbType As dbType, Optional defvalue As String = "*", Optional force_string As Boolean = False)
 ' convert excel value with type `VarType` to numeric or string representation that database `dbType` can interprete
-On Error GoTo ErrHandler
-errmsg0 = "error in function db.xlToDBvalue"
 
 'body
 'if empty: send NULL to database
@@ -775,17 +770,10 @@ xlToDBvalue = xlvalue
 'exit procedure
 Exit Function
 
-ErrHandler:
-MsgBox errmsg0 & " " & Error(Err)
-End
-
 'end procedure
 End Function
 
 Public Function xl_to_xlsdb_value(xlvalue)
-
-On Error GoTo ErrHandler
-errmsg0 = "error in function db.xl_to_xlsdb_value"
 
 'body
 'if empty: send NULL to database
@@ -819,82 +807,4 @@ xl_to_xlsdb_value = xlvalue0
 'exit procedure
 Exit Function
 
-ErrHandler:
-MsgBox errmsg0 & " " & Error(Err)
-End
-
-'end procedure
 End Function
-
-' tests
-Sub test()
-    Set conn = openDBconn(zz_env.MSSQL_HOME_CONN_STR)
-    conn.Close
-End Sub
-
-
-Sub test_getExcelConn()
-
-    Dim fl0 As File
-    Dim fs0 As New filesystemobject: Set fs0 = New filesystemobject
-    filePath = zz_env.VDMI_TESTDATAPATH & "/ISAH_mock_tables.xlsx"
-    Set fl0 = fs0.GetFile(filePath)
-    
-    Dim conn As New ADODB.Connection, rs0 As New ADODB.Recordset, sqlconn As New ADODB.Connection
-    Set conn = db.openExcelConn(fl0)
-    
-    Dim sql0 As String
-    sql0 = "SELECT * FROM [T_ProdBillOfOper$];"
-    Set rs0 = db.queryDB(conn, sql0)
-    
-    Dim target_table As String: target_table = "[Testmultifill].[dbo].[T_ProdBillOfOper]"
-    Dim insert_statement As String
-    insert_statement = db.sqlInsertStatement(rs0, target_table, mssql)
-    Debug.Print insert_statement
-    
-    Set fs0 = Nothing
-    conn.Close
-    
-    ' execute `insert_statement` against MSSQL_HOME
-    Set sqlconn = db.openDBconn(zz_env.MSSQL_HOME_CONN_STR)
-    'conn.Execute insert_statement
-    'conn.Close
-    
-    'Exit Sub
-    
-    Dim statements As New collection
-    Set statements = str.stringToCol(insert_statement, db.MSSQL_LINE_BREAK)
-    
-    c = 0
-    For Each stat In statements
-        Debug.Print stat
-        conn.Execute CStr(stat)
-        c = c + 1
-    Next
-    
-    conn.Close
-
-End Sub
-
-Sub test_sqlWhereInCondition()
-    Debug.Print sqlWhereInCondition(Array("A", "B", "C"), "column", mssql)
-End Sub
-
-Sub test_query_workbook()
-    Dim wb0 As Workbook, sql0 As String, rs0 As New ADODB.Recordset
-    Set wb0 = ThisWorkbook
-    
-    Dim conn As New ADODB.Connection
-    Set conn = db.openExcelConn(wb0)
-    
-    sql0 = "SELECT DISTINCT OrderNummer FROM [TEST_DATA$]"
-    Set rs0 = db.queryDB(conn, sql0)
-    db.printRecordset rs0
-    
-    conn.Close
-    
-End Sub
-
-
-
-
