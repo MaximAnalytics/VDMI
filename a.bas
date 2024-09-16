@@ -30,7 +30,7 @@
 'FillArray(arr As Variant, value As Variant)
 
 ' 3. utility
-'item_in_array(item, arr) => Checks if item is in array
+'ItemInArray(item, arr) => Checks if item is in array
 'indexInBounds(arr, i, axis) => Checks if index is within array bounds
 'ArraysAreEqual(arr0, arr1) => Checks if two arrays are equal
 'castArrayAsString(arr) => Casts all elements of array to string
@@ -56,6 +56,8 @@
 'QueryArray(arr As Variant, ParamArray criteria()) => Filters arr on criteria() => (var1,val1,...,varN,valN)
 'RemoveNullsFromArray(arr, filterColumns()) => Filters out arr on filterColumn = null
 
+'4.2 filtering
+
 ' 5. combine, join, merge
 'setArrayHeader(arr, header) => Sets header row in array
 'concatArrays(arr0, arr1) => Concatenates two arrays vertically
@@ -65,11 +67,16 @@
 'paste_array(arr, addr, ws, wb) => Pastes array to worksheet range
 
 Sub test_array_functions()
+
+    Application.ScreenUpdating = False
     
     ' initialize
     Dim ws0 As Worksheet, matrix() As Integer
     Set ws0 = w.get_or_create_worksheet("test", ThisWorkbook, True)
     
+    '3 utility
+    Debug.Assert a.ItemInArray("A", Array("A", "B")) And Not a.ItemInArray("C", Array("A", "B"))
+
     'test: create vector, array and test 1d/2d, w/o header
     vec0 = a.create_vector(10, 1, header_value:="some_number", as_2darray:=False)
     vec1 = a.create_vector(10, "A", header_value:="some_string", as_2darray:=True)
@@ -188,7 +195,15 @@ Sub test_array_functions()
     arrayFiltered2 = a.QueryArray(arrayFiltered1, "Artikel", "000900853/02")
     a.printArray arrayFiltered2
     Debug.Assert getNamedArrayValue(arrayFiltered2, "Ordernummer") = 228978 And getNamedArrayValue(arrayFiltered2, "Land") = "NL"
+    
+    ' 4.2 array filtering
+    columnArray = Worksheets("test").Range("A1:A20").value
+    a.printArray columnArray
+    Debug.Print a.num_array_rows(FilterArrayRemoveNulls(columnArray))
+    Debug.Assert a.num_array_rows(FilterArrayRemoveNulls(columnArray)) = 19
 
+    Application.ScreenUpdating = True
+    
 End Sub
 
 ' 1 Array properties
@@ -583,8 +598,8 @@ Sub printArrayBounds(arr As Variant, Optional array_name As String = "")
     End If
 End Sub
 
-Function item_in_array(item, arr As Variant) As Boolean
-    item_in_array = clls.item_exists(item, a.as_collection(arr))
+Function ItemInArray(item, arr As Variant) As Boolean
+    ItemInArray = clls.item_exists(item, a.as_collection(arr))
 End Function
 
 'index in bounds
@@ -828,7 +843,7 @@ Function getIndexOfArray(value As Variant, arr As Variant) As Long
     getIndexOfArray = match_index
 End Function
 
-' 4 array subsetting
+' 4. array subsetting
 Function get_array_column(arr, i, Optional row_offset = 0) As Variant
     Dim numRows As Long
     Dim numCols As Long
@@ -1392,6 +1407,32 @@ Function getNamedArrayValue(arr As Variant, columnname As String) As Variant
     
     ' Return the value
     getNamedArrayValue = value
+End Function
+
+'4.2 array filtering
+Function FilterArrayRemoveNulls(ByVal arr As Variant) As Variant
+    Dim tempArray() As Variant
+    Dim i As Long
+    Dim count As Long
+
+    ' Loop through the array and check the condition
+    Dim col0 As collection
+    Set col0 = New collection
+    For i = LBound(arr, 1) To UBound(arr, 1)
+        arr_value = arr(i, LBound(arr, 2))
+        If Not IsEmpty(arr_value) And Not u.IsNull(arr_value) And arr_value <> "" Then
+            ' Add to temporary array if condition is met
+            col0.Add arr_value
+        End If
+    Next i
+    
+    ' Resize the array to fit only the filtered elements
+    If col0.count > 0 Then
+        FilterArrayRemoveNulls = clls.CollectionToArray(col0)
+    Else
+        ' Return an empty array if no elements match the condition
+        FilterArrayRemoveNulls = Array()
+    End If
 End Function
 
 '5. Array combining, joining, merging
