@@ -16,6 +16,7 @@ Sub test_utilities()
     Debug.Assert IsNull("") = True
     Debug.Assert IsNull("Hello") = False
     Debug.Assert IsNull(0) = False
+    Debug.Assert Not IsNull(Array("A")) = IsNull(Array()) = True
     
     ' Test nvl function
     Debug.Assert nvl(Empty, "Default") = "Default"
@@ -79,8 +80,15 @@ Function IsNull(x As Variant) As Boolean
     '
     ' Returns:
     ' True if x is null, False otherwise.
-    
-    IsNull = IsEmpty(x) Or (TypeName(x) = "String" And x = "")
+    If IsArray(x) Then
+       If UBound(x) = -1 Then
+          IsNull = True
+       Else
+          IsNull = False
+       End If
+    Else
+       IsNull = IsEmpty(x) Or (TypeName(x) = "String" And x = "")
+    End If
 End Function
 
 Function nvl(x As Variant, y As Variant) As Variant
@@ -94,7 +102,7 @@ Function nvl(x As Variant, y As Variant) As Variant
     ' Returns:
     ' x if x is not null, y otherwise.
     
-    If IsNull(x) Then
+    If u.IsNull(x) Then
         nvl = y
     Else
         nvl = x
@@ -247,4 +255,5 @@ Dim params() As Variant
 ReDim params(0 To 0)
 params(0) = col
 End Sub
+
 
