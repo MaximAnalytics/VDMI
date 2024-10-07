@@ -32,7 +32,7 @@ Sub test_collection_functions()
     Dim testCol As New collection
     Set testCol = clls.ItemsToCollection("Item1", "Item2", "Item3")
     Debug.Assert pop(testCol) = "Item3"
-    Debug.Assert testCol.count = 2
+    Debug.Assert testCol.Count = 2
     
     Debug.Assert pop(testCol, index:=1) = "Item1"
     Debug.Assert pop(testCol, index:=1) = "Item2"
@@ -72,7 +72,7 @@ Sub test_collection_functions()
     ' 4. combine, merge, join, unique
     Dim concatAB As collection, concatA0 As collection, concat0B As collection
     Set concatAB = clls.concatCollections(toCollection("A"), toCollection("B"))
-    Debug.Assert concatAB.count = 2
+    Debug.Assert concatAB.Count = 2
     Set col = New collection
     Set concatA0 = clls.concatCollections(toCollection("A"), col)
     Debug.Assert concatA0(1) = "A"
@@ -106,7 +106,7 @@ Sub printKeys(col As collection)
     Dim item As Variant
     
     ' Loop through each item in the collection
-    For i = 1 To col.count
+    For i = 1 To col.Count
         ' Attempt to retrieve the key using error handling
         On Error Resume Next
         key = col(i) ' Attempt to access the item by its index
@@ -124,7 +124,7 @@ End Sub
 ' Logical
 Function item_exists(item As Variant, collection As collection) As Boolean
     Dim i As Integer
-    For i = 1 To collection.count
+    For i = 1 To collection.Count
         If collection(i) = item Then
             item_exists = True
             Exit Function
@@ -163,16 +163,16 @@ Function pop(ByRef col As collection, Optional index As Variant) As Variant
     
     Dim result As Variant
     
-    If col.count = 0 Then
+    If col.Count = 0 Then
         Exit Function
     End If
     
     If IsMissing(index) Then
-        index = col.count ' Default to the last item
+        index = col.Count ' Default to the last item
     End If
     
     ' Check if the index is within the bounds of the collection
-    If index >= 1 And index <= col.count Then
+    If index >= 1 And index <= col.Count Then
         result = col(index)
         col.Remove index
     Else
@@ -210,13 +210,13 @@ Function getItem(col As collection, shift As Integer) As Variant
     
     Dim index As Integer
     If shift < 0 Then
-        index = col.count + shift + 1 ' Convert negative index to positive
+        index = col.Count + shift + 1 ' Convert negative index to positive
     Else
         index = shift
     End If
     
     ' Check if the index is within the bounds of the collection
-    If index >= 1 And index <= col.count Then
+    If index >= 1 And index <= col.Count Then
         item = col(index)
         getItem = item
     Else
@@ -233,7 +233,7 @@ Function alternate_items(col As collection) As collection
     Set newCol = New collection
     
     frontIndex = 1
-    backIndex = col.count
+    backIndex = col.Count
     
     ' Continue until front and back indices cross
     While frontIndex <= backIndex
@@ -276,8 +276,8 @@ Function shuffle(ByVal col As collection, Optional items_to_back As Integer = 0,
     ' Move the specified number of items to the front of the collection
     If items_to_front > 0 Then
         For i = 1 To items_to_front
-            tempToFront.Add col(col.count)
-            col.Remove col.count
+            tempToFront.Add col(col.Count)
+            col.Remove col.Count
         Next i
     End If
     
@@ -299,8 +299,8 @@ Function sort_collection(col As collection, Optional ascending As Boolean = True
     Dim item
     
     ' Convert Collection to Array
-    ReDim arr(1 To col.count)
-    For i = 1 To col.count
+    ReDim arr(1 To col.Count)
+    For i = 1 To col.Count
         If IsDate(col(i)) Or IsNumeric(col(i)) Or VarType(col(i)) = vbString Then
             arr(i) = col(i)
         Else
@@ -436,12 +436,12 @@ Function collectionToString(col As collection, Optional delimiter As String = ",
     Dim i As Integer
     
     ' Loop through each item in the collection
-    For i = 1 To col.count
+    For i = 1 To col.Count
         ' Append the item to the result string
         result = result & col(i)
         
         ' Add delimiter if it's not the last item
-        If i < col.count Then
+        If i < col.Count Then
             result = result & delimiter
         End If
     Next i
@@ -456,7 +456,7 @@ Function CollectionToArray(col As collection) As Variant
     Dim n As Long
     
     ' Get the number of items in the collection
-    n = col.count
+    n = col.Count
     
     ' Dimension the array as (1 to n, 1 to 1)
     ReDim arr(1 To n, 1 To 1)
@@ -549,4 +549,5 @@ Function ItemsToCollection(ParamArray items()) As collection
     ' Return the collection with all items added
     Set ItemsToCollection = result
 End Function
+
 

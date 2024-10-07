@@ -153,7 +153,7 @@ Function get_datetime_value(dateString, Optional timeString = "00:00") As Double
 Dim date_value As Double
 If VarType(dateString) = vbDate Then
    dateString = Format(dateString, "yyyy-mm-dd")
-   date_value = CDbl(dateValue(dateString))
+   date_value = CDbl(DateValue(dateString))
 ElseIf VarType(dateString) = vbDouble Then
    date_value = dateString
 ElseIf VarType(dateString) = vbInteger Then
@@ -174,7 +174,7 @@ End Function
 Function set_date_timepart(date0 As Date, Optional timepart As String = "00:00") As Date
     ' Use the DateValue function to extract the date part of the date argument
     Dim datePart As Date
-    datePart = dateValue(date0)
+    datePart = DateValue(date0)
     
     ' Use the TimeValue function to convert the timepart argument to a time
     timepart = TimeValue(timepart)
@@ -182,4 +182,5 @@ Function set_date_timepart(date0 As Date, Optional timepart As String = "00:00")
     ' Combine the date and time to create a new Date value
     set_date_timepart = datePart + timepart
 End Function
+
 

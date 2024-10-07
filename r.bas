@@ -100,7 +100,7 @@ Sub test_range_functions()
    
    ' test `expand_range`
    Set rng0 = r.expand_range("A1", Worksheets("TEST_DATA"))
-   Debug.Assert rng0.Rows.count = 311
+   Debug.Assert rng0.Rows.Count = 311
     
     'filter on single value
     filter_values = Array("LN 1")
@@ -143,12 +143,12 @@ Sub test_range_functions()
     numRows = UBound(new_values, 1)
     numCols = UBound(new_values, 2)
     Set rng1 = r.getResizedRange(rng0, num_rows:=numRows, num_cols:=numCols)
-    Debug.Assert rng1.Rows.count = numRows And rng1.columns.count = numCols
+    Debug.Assert rng1.Rows.Count = numRows And rng1.Columns.Count = numCols
     
     ' test updateNamedRangeWithValues
     r.updateNamedRangeWithValues named_range_name, new_values
     Set rng1 = r.get_range(named_range_name)
-    Debug.Assert rng1.Rows.count = numRows And rng1.columns.count = numCols And rng1.Cells(1, 1) = new_values(1, 1)
+    Debug.Assert rng1.Rows.Count = numRows And rng1.Columns.Count = numCols And rng1.Cells(1, 1) = new_values(1, 1)
     
     ' insert columns at start, second position and end
     r.add_named_range_column "test", "first_column", pos:=1, values:=a.to_array("A")
@@ -210,17 +210,17 @@ Sub SetColumnValues(rng As Range, Optional values)
     Dim i As Long
     
     ' Set valuesRng as rng without the first row (header)
-    If rng.Rows.count <= 1 Then
+    If rng.Rows.Count <= 1 Then
        Exit Sub
     End If
-    Set valuesRng = rng.Offset(1, 0).Resize(rng.Rows.count - 1, rng.columns.count)
+    Set valuesRng = rng.Offset(1, 0).Resize(rng.Rows.Count - 1, rng.Columns.Count)
     
     ' Check if values is an array
     If IsArray(values) Then
         ' Check if the number of rows in valuesRng matches the length of the array
         values = a.ConvertTo1DArray(values)
         num_values = a.array_length(values)
-        If valuesRng.Rows.count = num_values Then
+        If valuesRng.Rows.Count = num_values Then
             ' Loop over items of values and set to cells in valuesRng
             For i = LBound(values) To UBound(values)
                 valuesRng.Cells(i - LBound(values) + 1, 1).value = values(i)
@@ -228,7 +228,7 @@ Sub SetColumnValues(rng As Range, Optional values)
         Else
             ' Raise an error if the number of values does not match the number of rows
             errstr = "Number of values. Number of rows: @1, number of values elements: @2"
-            errstr = str.subInStr(errstr, valuesRng.Rows.count, num_values)
+            errstr = str.subInStr(errstr, valuesRng.Rows.Count, num_values)
             Err.Raise vbObjectError + 1, "SetColumnValues", errstr
         End If
     Else
@@ -253,7 +253,7 @@ Sub set_column_values(named_range As String, column_name As String, values As Va
     End If
     
     ' Get the number of rows in the named range
-    numRows = rng.Rows.count - 1
+    numRows = rng.Rows.Count - 1
     
     ' If range has no values rows then exit sub
     If numRows < 1 Then
@@ -310,7 +310,7 @@ Sub add_named_range_column(named_range As String, column_name As String, Optiona
     Set headerRow = rng.Rows(1)
     
     ' Get the column index to insert the new column
-    If pos > 0 And pos <= rng.columns.count Then
+    If pos > 0 And pos <= rng.Columns.Count Then
         ' Insert the new column
         columnIndex = pos
         Set newColumn = headerRow.Cells(1, columnIndex).EntireColumn
@@ -321,7 +321,7 @@ Sub add_named_range_column(named_range As String, column_name As String, Optiona
            r.update_named_range named_range, r.getResizedRange(r.get_range(orig_address), add_cols:=1)
         End If
         
-    ElseIf pos > rng.columns.count Or pos = 0 Then
+    ElseIf pos > rng.Columns.Count Or pos = 0 Then
         ' Append to end
         ' resize named range
         r.update_named_range named_range, r.getResizedRange(rng, add_cols:=1)
@@ -329,7 +329,7 @@ Sub add_named_range_column(named_range As String, column_name As String, Optiona
         orig_address = r.get_range(named_range).address
         
         ' Insert the new column
-        columnIndex = headerRow.columns.count
+        columnIndex = headerRow.Columns.Count
         Set newColumn = headerRow.Cells(1, columnIndex).EntireColumn
         newColumn.Insert shift:=xlToRight
         r.update_named_range named_range, orig_address
@@ -436,8 +436,8 @@ Optional overwrite As Boolean = True, Optional expand_range As Boolean = False, 
        ' Set formula if provided
        rng.formula = formula
     End If
-    num_cols = rng.columns.count
-    num_rows = rng.Rows.count
+    num_cols = rng.Columns.Count
+    num_rows = rng.Rows.Count
 
     ' optionally fill header/first row
     Dim header_array() As String
@@ -455,7 +455,7 @@ Optional overwrite As Boolean = True, Optional expand_range As Boolean = False, 
         num_rows = get_array_len(id_array)
     End If
     
-    If rng.columns.count <> num_cols Or rng.Rows.count <> num_rows Then
+    If rng.Columns.Count <> num_cols Or rng.Rows.Count <> num_rows Then
        Debug.Print rng.address
        Set rng = r.getResizedRange(rng.Cells(1, 1), num_rows - 1, num_cols - 1)
        Debug.Print num_rows, num_cols, rng.address
@@ -466,7 +466,7 @@ Optional overwrite As Boolean = True, Optional expand_range As Boolean = False, 
     End If
     
     If Len(id_row) > 0 Then
-      rng.columns(1).value = WorksheetFunction.Transpose(str_to_array(id_row))
+      rng.Columns(1).value = WorksheetFunction.Transpose(str_to_array(id_row))
     End If
     
     ' update named range
@@ -582,13 +582,13 @@ Sub add_formula_column_to_named_range(name As String, Optional newColumn = "form
     Set rng = get_range(name)
     
     ' Get the number of rows in the named range
-    numRows = rng.Rows.count
+    numRows = rng.Rows.Count
     
     ' Define the formula for the new column
     ' formulaDefinition = "=YourFormula"
     
     ' Add a new column to the right of the named range
-    Set newcolumn_range = rng.Offset(0, rng.columns.count).Resize(numRows, 1)
+    Set newcolumn_range = rng.Offset(0, rng.Columns.Count).Resize(numRows, 1)
     
     ' Set the header of the new column
     newcolumn_range.Cells(1).value = newColumn
@@ -598,14 +598,14 @@ Sub add_formula_column_to_named_range(name As String, Optional newColumn = "form
     
     ' Fill the formula downwards if the named range has more than 2 rows
     ' Set the formula for the remaining cells in the new column
-    If rng.Rows.count > 1 Then
-        Set formula_range = rng.Offset(1, rng.columns.count).Resize(numRows - 1, 1)
+    If rng.Rows.Count > 1 Then
+        Set formula_range = rng.Offset(1, rng.Columns.Count).Resize(numRows - 1, 1)
         formula_range.Cells(1).AutoFill Destination:=formula_range, Type:=xlFillDefault
         formula_range.Activate
     End If
     
     ' Update the named range to include the new column
-    update_named_range name, rng.Resize(numRows, rng.columns.count + 1)
+    update_named_range name, rng.Resize(numRows, rng.Columns.Count + 1)
 End Sub
 
 Sub fill_formula_range(rng, formulaDefinition, Optional only_values As Boolean = False)
@@ -614,7 +614,7 @@ Sub fill_formula_range(rng, formulaDefinition, Optional only_values As Boolean =
     Set formula_range = get_range(rng)
     
     ' optional: exclude header (first row) if only_values
-    If formula_range.Rows.count > 1 And only_values Then
+    If formula_range.Rows.Count > 1 And only_values Then
        Set formula_range = r.subset_range(formula_range, startrow:=2)
     End If
     
@@ -623,7 +623,7 @@ Sub fill_formula_range(rng, formulaDefinition, Optional only_values As Boolean =
     
     ' Set the formula for the new column
     formula_range.Cells(1).formula = formulaDefinition
-    If formula_range.Rows.count > 1 Then
+    If formula_range.Rows.Count > 1 Then
         formula_range.Cells(1).AutoFill Destination:=formula_range, Type:=xlFillDefault
     End If
 End Sub
@@ -634,7 +634,7 @@ r.add_formula_column_to_named_range "test", formulaDefinition:="=G2+H2"
 End Sub
 
 Function safe_offset(rng0 As Range, Optional offset_row = 0, Optional offset_column = 0) As Range
-    If rng0.Rows.count < r.MAX_XL_ROWS Then
+    If rng0.Rows.Count < r.MAX_XL_ROWS Then
        Set rng0 = rng0.Offset(offset_row, offset_column)
     End If
     Set safe_offset = rng0
@@ -714,8 +714,8 @@ Function extend_range(rng As Variant, Optional ws As Variant, Optional wb As Var
     ' Extend the range if necessary
     If add_rows > 0 Or add_cols > 0 Then
         Dim lastRow As Long, lastCol As Long
-        lastRow = rng0.Rows(rng0.Rows.count).row + add_rows
-        lastCol = rng0.columns(rng0.columns.count).column + add_cols
+        lastRow = rng0.Rows(rng0.Rows.Count).row + add_rows
+        lastCol = rng0.Columns(rng0.Columns.Count).column + add_cols
         Set rng0 = ws.Range(rng0.Cells(1, 1), ws.Cells(lastRow, lastCol))
     End If
     
@@ -777,7 +777,7 @@ Function getResizedRange(rng As Range, Optional add_rows As Long = 0, Optional a
     
     ' Resize the range: either add or set the new number of rows, columns
     If add_rows <> 0 Or add_cols <> 0 Then
-       Set new_range = start_cell.Resize(rng.Rows.count + add_rows, rng.columns.count + add_cols)
+       Set new_range = start_cell.Resize(rng.Rows.Count + add_rows, rng.Columns.Count + add_cols)
     ElseIf num_rows > 0 Or num_cols > 0 Then
        If num_rows < 1 Then
           Err.Raise 1, "getResizedRange", str.subInStr("new number of rows: @1", num_rows)
@@ -806,7 +806,7 @@ Function subset_range(rng0 As Range, _
     End If
     
     If IsMissing(endrow) Or IsEmpty(endrow) Then
-        maxRow = rng0.Rows.count + rng0.row - 1
+        maxRow = rng0.Rows.Count + rng0.row - 1
     Else
         maxRow = endrow + rng0.row - 1
     End If
@@ -818,7 +818,7 @@ Function subset_range(rng0 As Range, _
     End If
     
     If IsMissing(endcol) Or IsEmpty(endcol) Then
-        maxCol = rng0.columns.count + rng0.column - 1
+        maxCol = rng0.Columns.Count + rng0.column - 1
     Else
         maxCol = endcol + rng0.column - 1
     End If
@@ -847,7 +847,7 @@ Function get_last_row(Optional rng As Variant, Optional ws As Variant, Optional 
     ' Optional: Find the last row with a value starting from the second range
     If Not range2 Is Nothing Then
        lastRow2 = ws0.Cells(range2.Cells(1).row, range2.Cells(1).column).End(xlUp).row
-       lastRow = WorksheetFunction.MAX(lastRow, lastRow2)
+       lastRow = WorksheetFunction.Max(lastRow, lastRow2)
     End If
     
     If lastRow = r.MAX_XL_ROWS Then
@@ -893,14 +893,14 @@ Function get_range_values(rng, Optional ws As Worksheet, Optional wb As Workbook
     Set ws0 = get_default_ws(ws)
     
     'Set rng1 to the specified range, excluding the first row
-    If rng0.Rows.count <= 1 Then
+    If rng0.Rows.Count <= 1 Then
        Err.Raise 1, "r.get_range_values", "range has no interior"
        Exit Function
     End If
     
     Set rng1 = ws0.Range(rng0.address)
-    If rng1.Rows.count < r.MAX_XL_ROWS Then
-       Set rng1 = rng1.Offset(offset_row, offset_column).Resize(rng0.Rows.count - offset_row, rng0.columns.count - offset_column)
+    If rng1.Rows.Count < r.MAX_XL_ROWS Then
+       Set rng1 = rng1.Offset(offset_row, offset_column).Resize(rng0.Rows.Count - offset_row, rng0.Columns.Count - offset_column)
     End If
     
     'Return rng1
@@ -914,19 +914,19 @@ Function get_column(rng, index As Variant, Optional ws As Worksheet, Optional wb
     
     col_index = r.get_column_index(rng0, index)
     If offset_row < 1 Then
-       Set get_column = rng0.columns(col_index)
+       Set get_column = rng0.Columns(col_index)
     Else
-       Set rng1 = rng0.columns(col_index)
-       Set get_column = rng1.Offset(offset_row).Resize(rng1.Rows.count - offset_row)
+       Set rng1 = rng0.Columns(col_index)
+       Set get_column = rng1.Offset(offset_row).Resize(rng1.Rows.Count - offset_row)
     End If
 End Function
 
 Function get_column_values(rng As Range, index As Variant, Optional ws As Worksheet, Optional wb As Workbook) As Range
     Dim rng0 As Range
     Set rng0 = get_column(rng, index, ws, wb)
-    If rng0.Rows.count > 1 Then
+    If rng0.Rows.Count > 1 Then
        Set rng0 = safe_offset(rng0, offset_row:=1)
-       Set get_column_values = rng0.Resize(rng0.Rows.count - 1)
+       Set get_column_values = rng0.Resize(rng0.Rows.Count - 1)
     Else
        Set get_column_values = Nothing
     End If
@@ -939,7 +939,7 @@ Function get_column_index(rng As Range, column_name) As Long
 End Function
 
 Function getColumnIndex(rng As Range, column_name_index) As Long
-    ' This function returns the column index based on the column name or index provided.
+    ' This function returns the column index within the range `rng`, based on the column name or index provided.
     ' If the column_name is an integer, it is treated as the column index.
     ' If the column_name is a string, it is treated as the column header name.
     
@@ -949,7 +949,7 @@ Function getColumnIndex(rng As Range, column_name_index) As Long
     If IsNumeric(column_name_index) Then
         ' If column_name is an integer, check if it is within the range's column count
         column_index = column_name_index
-        If column_index > 0 And column_index <= rng.columns.count Then
+        If column_index > 0 And column_index <= rng.Columns.Count Then
             ' Return the column index as is
             getColumnIndex = column_index
         Else
@@ -977,7 +977,7 @@ Function get_column_indexes(rng As Range, column_names) As Variant
     column_names_array = r.to_column_names(column_names)
     Set column_names_col = a.as_collection(column_names_array)
     
-    column_indexes = a.create_vector(column_names_col.count)
+    column_indexes = a.create_vector(column_names_col.Count)
     c = 1
     For Each column_name In column_names_col
     column_indexes(c) = r.get_index_of_value(CStr(column_name), header0)
@@ -1007,14 +1007,14 @@ Function get_row(rng, index As Variant, Optional ws As Worksheet, Optional wb As
        Set get_row = rng0.Rows(row_index)
     Else
        Set rng1 = rng0.Rows(row_index)
-       Set get_row = rng1.Offset(ColumnOffset:=offset_column).Resize(ColumnSize:=rng1.columns.count - offset_column)
+       Set get_row = rng1.Offset(ColumnOffset:=offset_column).Resize(ColumnSize:=rng1.Columns.Count - offset_column)
     End If
 End Function
 
 Function get_row_index(rng, row_index) As Long
     Dim row0 As Range, rng0 As Range
     Set rng0 = r.get_range(rng)
-    Set row0 = rng0.columns(1)
+    Set row0 = rng0.Columns(1)
     get_row_index = r.get_index_of_value(row_index, row0)
 End Function
 
@@ -1165,8 +1165,8 @@ Function getRangeFullAddress(rng As Range, Optional removeFileName As Boolean = 
 End Function
 
 Function get_column_address(rng0 As Range) As String
-    startcol = rng0.columns(1).column
-    endcol = rng0.columns(rng0.columns.count).column
+    startcol = rng0.Columns(1).column
+    endcol = rng0.Columns(rng0.Columns.Count).column
     
     startColAddress = Split(Cells(1, startcol).address, "$")(1)
     endColAddress = Split(Cells(1, endcol).address, "$")(1)
@@ -1200,7 +1200,7 @@ End Sub
 Sub clear_range_values(rng, Optional clear_formatting As Boolean = True)
     Dim rng0 As Range
     Set rng0 = r.get_range(rng)
-    If rng0.Rows.count > 1 Then
+    If rng0.Rows.Count > 1 Then
        Set rng0 = safe_offset(rng0, offset_row:=1) 'rng0.Offset(1)
        r.clear_range rng0, clear_formatting:=clear_formatting
     End If
@@ -1268,8 +1268,8 @@ Sub format_row_column_size(ws As Worksheet, r_height As Double, c_width As Doubl
     
     ' Check if any column has a different width
     For j = 1 To lastCol
-        If ws.columns(j).ColumnWidth <> c_width Then
-            ws.columns(j).ColumnWidth = c_width
+        If ws.Columns(j).ColumnWidth <> c_width Then
+            ws.Columns(j).ColumnWidth = c_width
         End If
     Next j
     
@@ -1277,19 +1277,19 @@ End Sub
 
 Sub autofit_columns_rows(rng As Range)
     Dim i As Long, j As Long
-    For i = 1 To rng.columns.count
-        rng.columns(i).EntireColumn.AutoFit
+    For i = 1 To rng.Columns.Count
+        rng.Columns(i).EntireColumn.AutoFit
     Next i
-    For j = 1 To rng.Rows.count
+    For j = 1 To rng.Rows.Count
         rng.Rows(j).EntireRow.AutoFit
     Next j
 End Sub
 
 Sub autofit_columns(rng As Range)
     Dim i As Long
-    For i = 1 To rng.columns.count
+    For i = 1 To rng.Columns.Count
         'rng.Columns(i).EntireColumn.AutoFit
-        rng.Worksheet.columns(rng.Cells(1, i).column).EntireColumn.AutoFit
+        rng.Worksheet.Columns(rng.Cells(1, i).column).EntireColumn.AutoFit
     Next i
 End Sub
 
@@ -1298,11 +1298,11 @@ Function get_column_formats(rng As Range) As Variant
     Dim i As Long
     
     ' Re-dimension the column format array
-    ReDim columnFormatArr(1 To rng.columns.count)
+    ReDim columnFormatArr(1 To rng.Columns.Count)
     
     ' Loop through each cell in the specified column and store its format
-    For i = 1 To rng.columns.count
-        columnFormatArr(i) = rng.columns(i).NumberFormat
+    For i = 1 To rng.Columns.Count
+        columnFormatArr(i) = rng.Columns(i).NumberFormat
     Next i
     
     ' Return the column format array
@@ -1316,10 +1316,10 @@ Function rng_to_1d_array(rng0) As Variant
     Set rng = get_range(rng0)
     
     ' Resize the array to match the size of the input range
-    ReDim arr(1 To rng.Cells.count)
+    ReDim arr(1 To rng.Cells.Count)
     
     ' Loop through the range and populate the array
-    For i = 1 To rng.Cells.count
+    For i = 1 To rng.Cells.Count
         arr(i) = rng.Cells(i).value
     Next i
     
@@ -1335,11 +1335,11 @@ Function rng_to_2d_array(rng0) As Variant
     Set rng = get_range(rng0)
     
     ' Resize the array to match the size of the input range
-    ReDim arr(1 To rng.Rows.count, 1 To rng.columns.count)
+    ReDim arr(1 To rng.Rows.Count, 1 To rng.Columns.Count)
     
     ' Loop through the range and populate the array
-    For i = 1 To rng.Rows.count
-        For j = 1 To rng.columns.count
+    For i = 1 To rng.Rows.Count
+        For j = 1 To rng.Columns.Count
             arr(i, j) = rng.Cells(i, j).value
         Next j
     Next i
@@ -1438,14 +1438,14 @@ Function filter_range(rng As Range, column_name As String, filter_value As Varia
     Set filteredRange = rng.SpecialCells(xlCellTypeVisible)
      
     ' return based on number of areas (1,2)
-    If filteredRange.Areas.count <= 1 Then
+    If filteredRange.Areas.Count <= 1 Then
        Debug.Print "filteredRange has single area:", filteredRange.Areas(1).address
        filter_range = filteredRange.value
     Else
-       Debug.Print "filteredRange has multiple areas:", filteredRange.Areas.count
+       Debug.Print "filteredRange has multiple areas:", filteredRange.Areas.Count
        filter_range = filteredRange.Areas(1).value
        Debug.Print filteredRange.Areas(1).address
-       For i = 2 To filteredRange.Areas.count
+       For i = 2 To filteredRange.Areas.Count
            Debug.Print filteredRange.Areas(i).address
            filter_range = a.concatArrays(filter_range, filteredRange.Areas(i).value)
        Next i
@@ -1468,7 +1468,7 @@ Function get_index_of_value(value As Variant, rng As Range) As Variant
             Err.Raise vbObjectError + 1, "get_index_of_value", "Index " & value & " not found in range"
         End If
     ElseIf VarType(match_index) = vbLong Or VarType(match_index) = vbInteger Then
-        If match_index < 1 Or match_index > rng.Cells.count Then
+        If match_index < 1 Or match_index > rng.Cells.Count Then
             Err.Raise vbObjectError + 1, "get_index_of_value", "Index " & value & " not found in range"
         End If
     Else
@@ -1525,7 +1525,7 @@ Sub sort_range_by_columns(rng As Range, column_names As Variant, Optional sort_o
         '.Sort Key1:=.Columns(sort_column_indices(0)), Order1:=sort_order, _
               Orientation:=xlSortColumns, Header:=xlYes
         For i = LBound(sort_column_indices) To UBound(sort_column_indices)
-            .Sort Key1:=.columns(sort_column_indices(i)), Order1:=sort_order, _
+            .Sort Key1:=.Columns(sort_column_indices(i)), Order1:=sort_order, _
                   Orientation:=xlSortColumns, header:=xlYes
         Next i
     End With
@@ -1597,9 +1597,22 @@ Sub InsertColumnIntoRange(rng As Range, column_name_index As Variant, Optional n
     End If
     
     ' Insert the new column at the specified index
-    Set newColumn = rng.columns(columnIndex)
+    Set newColumn = rng.Columns(columnIndex)
+    
+    ' get the absolute column index
+    Dim absColumnIndex As Integer, originalColumnAddress As String
+    absColumnIndex = newColumn.column
+    originalColumnAddress = newColumn.address
+    
+    'insert the new column
     newColumn.Insert shift:=xlToRight
     
+    If absColumnIndex = 1 Then
+       ' the original column is outside the range, so append to the original range
+       Set rng = Union(ws.Range(originalColumnAddress), rng)
+       Debug.Print absColumnIndex, originalColumnAddress, rng.address
+    End If
+
     ' Get the new column by index
     Set newColumn = r.get_column(rng, columnIndex)
     
@@ -1608,7 +1621,7 @@ Sub InsertColumnIntoRange(rng As Range, column_name_index As Variant, Optional n
     End If
     
     If IsMissing(values) = False Then
-        r.SetColumnValues newColumn, values
+       r.SetColumnValues newColumn, values
     End If
 End Sub
 
@@ -1632,7 +1645,7 @@ Sub DeleteColumnFromRange(rng As Range, column_name_index As Variant)
     columnIndex = getColumnIndex(rng, column_name_index)
     
     ' Delete the column at the specified index
-    Set columnToDelete = rng.columns(columnIndex).EntireColumn
+    Set columnToDelete = rng.Columns(columnIndex).EntireColumn
     columnToDelete.Delete shift:=xlToLeft
     
 End Sub
@@ -1665,8 +1678,8 @@ Sub AppendColumnToRange(rng As Range, Optional new_column_name As String, _
     
     ' Find the last column index of the range
     firstRow = rng.Rows(1).row
-    lastRow = rng.Rows(rng.Rows.count).row
-    lastColumn = rng.columns(rng.columns.count).column
+    lastRow = rng.Rows(rng.Rows.Count).row
+    lastColumn = rng.Columns(rng.Columns.Count).column
     
     ' Append the new column at the end of the range
     Set newColumn = ws.Range(Cells(firstRow, lastColumn + 1), Cells(lastRow, lastColumn + 1))
@@ -1752,11 +1765,11 @@ Function select_columns(rng As Range, column_names) As Range
         Else
             If selectedRange Is Nothing Then
                 ' Set the initial selected range
-                Set selectedRange = rng.columns(column.column)
+                Set selectedRange = rng.Columns(column.column)
                 Set selectedHeaders = column
             Else
                 ' Union the subsequent selected ranges
-                Set selectedRange = Union(selectedRange, rng.columns(column.column))
+                Set selectedRange = Union(selectedRange, rng.Columns(column.column))
                 Set selectedHeaders = Union(selectedHeaders, column)
             End If
         End If
@@ -1859,7 +1872,7 @@ Sub format_columns(ws As Worksheet, column_format_mapping As Variant, Optional w
         ' Check if the column index is valid
         If colIndex > 0 Then
             ' Set the column format
-            rng.columns(colIndex).NumberFormat = colFormat
+            rng.Columns(colIndex).NumberFormat = colFormat
         Else
             ' Raise an error if the column name is not found
             Err.Raise 1002, "format_columns", "Column name not found: " & colName
@@ -1901,6 +1914,8 @@ Sub test_set_bold_row()
     Set orders_values_rng = r.get_range_values(orders_rng)
     orders_values_rng.Rows(overflow_row_index).Font.Bold = True
 End Sub
+
+
 
 
 

@@ -322,7 +322,7 @@ Sub clearWorksheet(ws_name As Variant, Optional wb As Workbook)
             .Cells.ClearContents
             .Cells.ClearFormats
             .Cells.FormatConditions.Delete
-            .columns.Hidden = False
+            .Columns.Hidden = False
             .Rows.Hidden = False
         End With
     End If
@@ -359,10 +359,10 @@ Function subset_columns(ws As Worksheet, column_indexes As Variant) As Range
     Dim result_range As Range
     Dim i As Integer
     
-    Set result_range = ws.columns(column_indexes(1))
+    Set result_range = ws.Columns(column_indexes(1))
     
     For i = 2 To UBound(column_indexes)
-        Set result_range = Union(result_range, ws.columns(column_indexes(i)))
+        Set result_range = Union(result_range, ws.Columns(column_indexes(i)))
     Next i
     
     Set subset_columns = result_range
@@ -454,6 +454,8 @@ End Sub
 Sub test_create_empty_workbook()
     w.create_empty_workbook "template.xlsm", os.getcwd()
 End Sub
+
+
 
 
 

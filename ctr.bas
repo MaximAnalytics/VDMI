@@ -9,7 +9,7 @@ Private Declare PtrSafe Function GetWindowText Lib "user32" Alias "GetWindowText
 
 ' 1. controls: buttons, etc
 Sub add_button(btn_name As String, Optional addr As String = "$A$1", Optional h As Long = 50, Optional w As Long = 100, Optional ws As Worksheet, Optional wb As Workbook, _
-                Optional overwrite As Boolean = True, Optional label As String = "Button", Optional placement As xlplacement = xlFreeFloating, Optional event_handler_function As String = "", _
+                Optional overwrite As Boolean = True, Optional label As String = "Button", Optional placement As XlPlacement = xlFreeFloating, Optional event_handler_function As String = "", _
                 Optional left_offset = 0)
     Dim ws0 As Worksheet, wb0 As Workbook, btn As Button
     'Get the default worksheet, workbook
@@ -119,3 +119,5 @@ Public Function CheckMessageBox(msgText As String) As Boolean
     CheckMessageBox = False
 End Function
 
+
+()
