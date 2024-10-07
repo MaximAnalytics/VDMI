@@ -3330,7 +3330,7 @@ Public Sub control_sheet_update_database_settings(Optional ByVal Target As Range
     If worksheetChanged Or True Then
         Dim selectedName As String
         Dim i As Long
-        selectedName = Target.value
+        selectedName = ws0.Range(main.DATABASE_DROPDOWN_ADDR).value
         For i = 1 To connectionStrings.Rows.count
             If connectionStrings.Cells(i, 1).value = selectedName Then
                 ' Do something with the connection string
