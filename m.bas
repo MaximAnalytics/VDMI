@@ -56,4 +56,3 @@ ErrorHandler:
     getRatio = defvalue
 End Function
 
-

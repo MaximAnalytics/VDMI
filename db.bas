@@ -65,7 +65,7 @@ Dim filePath As String, conn0 As ADODB.Connection, DataSourceString As String, C
     ' query empty recordset
     sql0 = "SELECT DISTINCT BasicMat FROM [T_Part_BasicMat$] WHERE BasicMat<'0'"
     Set rs0 = db.queryDB(conn0, sql0)
-    Debug.Assert RecordSetNumberRecords(rs0) = 0 And rs0.Fields.Count = 1 And db.RecordsSetHasFields(rs0)
+    Debug.Assert RecordSetNumberRecords(rs0) = 0 And rs0.Fields.count = 1 And db.RecordsSetHasFields(rs0)
     Debug.Assert a.ItemInArray("BasicMat", db.GetColumnNames(rs0))
     a.printArray db.RecordSetToArray(rs0)
     writeQueryToSheet conn0, sql0, "query"
@@ -347,8 +347,8 @@ Set fieldNames0 = str.stringToCol(set_columns, ";")
 
 'body
 str0 = "SET " & fieldNames0.item(1) & " = " & xlToDBvalue(record.Fields(fieldNames0.item(1)).value, dbtype0)
-If (fieldNames0.Count > 1) = True Then
-    For i = 2 To fieldNames0.Count
+If (fieldNames0.count > 1) = True Then
+    For i = 2 To fieldNames0.count
         str0 = str0 & " , " & fieldNames0.item(i) & " = " & xlToDBvalue(record.Fields(fieldNames0.item(i)).value, dbtype0)
     Next i
 End If
@@ -372,8 +372,8 @@ Set fieldNames0 = str.stringToCol(where_columns, ";")
 
 'body
 str0 = "WHERE " & fieldNames0.item(1) & " = " & xlToDBvalue(record.Fields(fieldNames0.item(1)).value, dbtype0, force_string:=force_string)
-If (fieldNames0.Count > 1) = True Then
-    For i = 2 To fieldNames0.Count
+If (fieldNames0.count > 1) = True Then
+    For i = 2 To fieldNames0.count
     str0 = str0 & " AND " & fieldNames0.item(i) & " = " & xlToDBvalue(record.Fields(fieldNames0.item(i)).value, dbtype0, force_string:=force_string)
     Next i
 End If
@@ -393,7 +393,7 @@ Public Function sqlWhereInCondition(where_values As Variant, where_column As Str
     c = 1
     Set where_values_col = a.as_collection(where_values)
     For Each value0 In where_values_col
-        If (c < where_values_col.Count) Then
+        If (c < where_values_col.count) Then
         sql0 = sql0 & db.xlToDBvalue(value0, dbtype0, force_string:=force_string) & ","
         Else
         sql0 = sql0 & db.xlToDBvalue(value0, dbtype0, force_string:=force_string)
@@ -504,7 +504,7 @@ Sub writeQueryToSheet(conn0 As Object, sql0 As String, wsName As String, Optiona
     a.pasteArray arr0, "A1", ws, ThisWorkbook
     
     ' Autofit the columns for better readability
-    ws.Columns.AutoFit
+    ws.columns.AutoFit
     
     If Len(map_format_column_type) > 0 Then
         r.format_columns ws, map_format_column_type, ThisWorkbook
@@ -535,12 +535,12 @@ Public Function GetColumnNames(rs As ADODB.Recordset) As Variant
     Dim i As Integer
     
     ' Check if the recordset is open and contains fields
-    If Not (rs Is Nothing) And rs.State = adStateOpen And rs.Fields.Count > 0 Then
+    If Not (rs Is Nothing) And rs.State = adStateOpen And rs.Fields.count > 0 Then
         ' Resize the array to hold all column names
-        ReDim colNames(1 To rs.Fields.Count)
+        ReDim colNames(1 To rs.Fields.count)
         
         ' Loop through the fields and retrieve the column names
-        For i = 1 To rs.Fields.Count
+        For i = 1 To rs.Fields.count
             colNames(i) = rs.Fields(i - 1).name
         Next i
         
@@ -579,7 +579,7 @@ r0 = 1
         Debug.Print "record num " & hdr
         End If
         
-        For c = 1 To .Fields.Count
+        For c = 1 To .Fields.count
             val0 = .Fields(c - 1).value
             name0 = ""
             type0 = ""
@@ -624,7 +624,7 @@ End Function
 Function RecordSetToArray(rs0 As ADODB.Recordset) As Variant
     ' Get the number of fields in the recordset
     Dim numFields As Integer
-    numFields = rs0.Fields.Count
+    numFields = rs0.Fields.count
     
     ' Get the number of records in the recordset
     Dim numRecords As Long
@@ -791,7 +791,7 @@ Else
         End Select
     'excel date type
     ElseIf (IsDate(xlvalue) = True) = True Then
-        xlvalue0 = CDbl(DateValue(xlvalue))
+        xlvalue0 = CDbl(dateValue(xlvalue))
     'excel numeric type
     ElseIf (IsNumeric(xlvalue) = True) = True Then
         xlvalue0 = xlvalue
@@ -808,5 +808,3 @@ xl_to_xlsdb_value = xlvalue0
 Exit Function
 
 End Function
-
-

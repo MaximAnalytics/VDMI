@@ -53,6 +53,7 @@ Global Const XL_MAX_NUMBER_COLUMNS As Long = 256
 Global Const WORKDAYS_RANGE_IDS As String = ",ma,di,woe,do,vrij,ma2,di2,woe2,do2,vrij2"
 Global Const WORKDAYS_RANGE_ADDRESS As String = "E2"
 Global Const ORDERS_RANGE_MAX_COLUMN_NUMBER As Integer = 15
+Global Const ORDERS_RANGE_VOLGNUMMER_COLUMN = "volgnummer"
 
 Global Const BTN_UPDATE_ISAH_ADDRESS As String = "A2"
 Global Const BTN_ADD_RECORD_ADDR As String = "A5"
@@ -67,7 +68,7 @@ Global Const BTN_LEFT_OFFSET = 10
 ' button labels
 Global Const BTN_RESTORE_PREV_STATE_LABEL = "Ga terug"
 
-' order sheet layout
+' ORDERS sheet layout
 Global Const N_TOP_ROWS_FREEZE As Integer = 14
 Global Const INPUT_FIELD_COLOR = 65535
 Global Const WT_HEADER_COLOR = 15123099
@@ -82,7 +83,7 @@ Global Const PRINT_WORKDAYS_ADDRESS = "K2"
 Global Const PRINT_FILE_RANGE_ADDRESS As String = "C6"
 Global Const PRINT_FILE_RANGE_IDS As String = ",Locatie print bestand"
 Global Const PRINT_FILE_RANGE_HEADER As String = ","
-Global Const PRINT_RENAME_COLUMNS = "Ordernummer=OrderNr;Productieorder=ProdOrd;Resources=Res;# pallets=#Plts;Flesformaat=Fles;Sluiting=Slt;ProdWk=Wk;Land=Ld;Pallettype=PltType"
+Global Const PRINT_RENAME_COLUMNS = "volgnummer=#;Ordernummer=OrderNr;Productieorder=ProdOrd;Resources=Res;# pallets=#Plts;Flesformaat=Fles;Sluiting=Slt;ProdWk=Wk;Land=Ld;Pallettype=PltType"
 Global Const PRINT_TITLE_START = "A2"
 Global Const PRINT_TITLE_RANGE = "A2:H6"
 
@@ -109,9 +110,8 @@ Global Const BULK_ORDERS_RANGE_NAME As String = "bulk_orders_range"
 Global Const BULK_ORDERS_SORTING_COLUMN As String = "SORTERING"
 Global Const BULK_ORDERS_CALC_RANGE_NAME As String = "bulk_orders_calc_range"
 
-Global Const CAPGRP_BULKCODE_STARTDATE_RANGE = "$G:$S" 'range on capgrp containing columns Bulkcode ... Starttijd
+Global Const CAPGRP_BULKCODE_STARTDATE_RANGE = "$H:$T" 'range on capgrp containing columns Bulkcode ... Starttijd
 Global Const STARTDATE_COLUMN_INDEX = 13
-
 
 ' CONTROL SHEET
 Global Const CONTROL_SHEET_NAME = "overzicht"
@@ -168,11 +168,153 @@ Dim r0 As Long, r1 As Long, c0 As Long, c1 As Long
 Dim rng0 As Range
 
 ' NEW DESIGN
-' 1.1 initialize from input sheet: new tabs per capgrp=>
-' 1.2 append STARTDATE, ENDDATE columns to each sheet
-' 2.1 dynamically update STARTDATE, ENDDATE
-' 3 export sheets
-' 4 ISAH export
+' 1. Initialization and Setup
+' 2. Data Retrieval and Processing
+' 3. Data Manipulation and UpdatesE
+' 4. Database and ISAH Operations
+' 5. Printing and Layout
+' 6. UI (BUTTON, DROPDOWN) HANDLERS
+
+' 1. Initialization and Setup:
+'    - init_capgrp_sheets
+'    - init_capgrp_sheet
+'    - init_capgrp_worksheet_code
+'    - init_capgrp_sheets_ALL
+'    - init_orders_range
+'    - init_workdaytimes_range
+'    - init_weeknumber_range
+'    - init_print_file_range
+'    - init_buttons
+'    - init_worksheet_sorting
+'    - init_control_sheet
+'    - layout_control_sheet_buttons
+'    - init_named_ranges
+
+' 2. Data Retrieval and Processing:
+'    - get_isah_input_range
+'    - get_isah_capgrp
+'    - get_template_capgrp_names
+'    - get_isah_capgrps
+'    - get_capgrp_sheet_names
+'    - get_art_capgrp
+'    - get_last_art_capgrp
+'    - get_bulk_capgrp
+'    orders: get_orders_range, set_orders_range_values
+'    - get_worktimes_range_name
+'    - get_worktimes_range
+'    - get_worktimes_values_range
+'    - set_worktimes_range_values
+'    - get_isah_export_range
+'    - get_weeknumber_range
+'    - get_capgrp_startdate
+'    - get_capgrp_year
+'    - get_capgrp_weeknumber
+'    - get_capgrp_print_location
+'    - get_row_in_named_range
+
+' 3. Data Manipulation and Updates:
+'    orders: copy_selected_orders, clear_orders_range, update_orders_range, fit_order_range_to_values
+'    - update_bulk_capgrp_orders
+'    - update_bulk_sorting
+'    - restore_isah_default_sorting
+'    - add_date_columns
+'    - add_tank_lo_columns
+'    - format_workdaytimes_range
+'    - assign_macro_to_btn
+'    - create_buttons
+'    - get_workdaytimes_array
+'    - set_capgrp_weeknumber
+'    - set_capgrp_year
+'    - set_capgrp_default_inputs
+'    - update_start_end_times
+'    - find_week_overflow_row
+'    - calculate_start_end_times
+'    - find_block_starttime
+'    - find_block_endtime
+'    - get_last_block
+
+'    - clear_all_capgrp_sheets
+
+
+'    - insert_number_of_pallets_formula
+'    - insert_record
+'    - delete_record
+'    - update_orders_color_format
+'    - update_orders_columns_width
+'    - fill_bulkcode_color
+'    - fill_bulkcode_color_rbg
+
+' 4. Database and ISAH Operations:
+'    - getISAHconnection
+'    - isah_export_test_connection
+'    - checkIsahTestQuery
+'    - getISAHdbname
+'    - getISAHProfileName
+'    - ISAHProfileIsHome
+'    - getISAHprodheader
+'    - getISAHprodboo
+'    - getISAHprodbom
+'    - getISAHpart
+'    - getISAHconnstr
+'    - isah_export_stage_orders
+'    - isah_export_match_prodheader
+'    - isah_export_update_prodboo_grp
+'    - isah_export_match_prodboo
+'    - isah_export_update_prodheader
+'    - isah_export_update_prodboo
+'    - isah_export_update_prodbom
+'    - isah_export_check_bom_dates
+'    - isah_export_match_bom_dates
+'    - isah_export_run_all
+'    - isah_import_articles
+
+' 5. Printing and Layout:
+'    - print_planning
+'    - SetCustomFooter
+'    - hide_columns_for_print
+'    - delete_columns_for_print
+
+' 6. Button Handlers:
+'    - btn_update_isah_data_Click
+'    - btn_add_record_Click
+'    - btn_delete_record_Click
+'    - btn_restore_prev_state_Click
+'    - btn_print_dates_Click
+'    - btn_calculate_dates_Click
+'    - btn_import_art_Click
+'    - btn_import_bulk_Click
+'    - btn_add_capgrp_sheets_Click
+'    - btn_isah_database_export_Click
+'    - btn_clear_sheet_Click
+'    - btn_isah_update_aantal_per_pallet_Click
+'    - btn_import_testdata_Click
+
+' 7. State Management:
+'    - SafeStoreCurrentState
+
+' 8. Checks and Exceptions:
+'    - check_isah_input_empty
+'    - check_isah_input_columns
+'    - check_isah_input
+
+' 9. Open Workbook Methods:
+'    - init_articles_per_pallet
+
+' 10. Utility and Helper Functions:
+'    - create_yellow_gradient
+'    - create_green_red_gradient
+'    - get_color_palette
+'    - get_random_color
+'    - get_random_color_palette
+'    - get_random_color_indices
+'    - get_color_index_light
+'    - get_color_indices_light
+'    - returnStringWithinBrackets
+'    - test_copy_selected_orders
+'    - test_calculate_start_end_times
+'    - test_insert_number_of_pallets_formula
+'    - test_get_color_index_light
+'    - test_
 
 ' INITIALIZERS: create capgrp sheets, UI panels, buttons
 Sub init_capgrp_sheets(Optional capgrp_sheet_filter As String)
@@ -245,11 +387,6 @@ clean_up:
     Application.ScreenUpdating = True
 End Sub
 
-Sub init_capgrp_sheet()
-    capgrp_sheet = "LN 1"
-    init_capgrp_sheets capgrp_sheet
-End Sub
-
 Sub init_capgrp_worksheet_code()
   Dim capgrp As String
   Set capgrp_sheet_names = main.get_capgrp_sheet_names()
@@ -257,6 +394,11 @@ Sub init_capgrp_worksheet_code()
      capgrp = c
      vb.CopyWorksheetCode main.BASE_SHEET_NAME, capgrp
   Next
+End Sub
+
+Sub init_capgrp_sheet()
+    capgrp_sheet = "LN 1"
+    init_capgrp_sheets capgrp_sheet
 End Sub
 
 Sub init_capgrp_sheets_ALL()
@@ -267,7 +409,65 @@ Sub init_capgrp_sheets_ALL()
     main.init_capgrp_worksheet_code
 End Sub
 
+Sub insert_volgnummer_into_orders(capgrp As String, Optional volgnummer_index As Integer = 1)
+    Dim orders_rng As Range
+    Set orders_rng = main.get_orders_range(capgrp)
+    r.InsertColumnIntoRange orders_rng, volgnummer_index, main.ORDERS_RANGE_VOLGNUMMER_COLUMN
+    'orders range is mutated so update in named range
+    r.update_named_range main.get_orders_range_name(capgrp), orders_rng
+    
+    'main.get_orders_range(capgrp).Select
+    'Debug.Print main.get_orders_range(capgrp).address
+    main.calculate_volgnummer capgrp, volgnummer_index
+    
+End Sub
+
+Sub calculate_volgnummer(capgrp As String, Optional volgnummer_index As Integer = 1)
+    Dim orders_rng As Range
+    Set orders_rng = main.get_orders_range(capgrp)
+    Dim i As Long
+    If orders_rng.count > 1 Then
+        For i = 2 To orders_rng.Rows.count
+            orders_rng.Cells(i, volgnummer_index).value = i - 1
+        Next i
+    End If
+    
+    orders_rng.columns(volgnummer_index).EntireColumn.AutoFit
+End Sub
+
+Sub test_volgnummer()
+    Application.EnableEvents = False
+    insert_volgnummer_into_orders "LN 1"
+    main.get_orders_range("LN 1").Select
+    Application.EnableEvents = True
+End Sub
+
+Sub restore_ln1()
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    main.init_capgrp_sheet
+    main.update_orders_range "LN 1"
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+End Sub
+
 Sub init_orders_range(capgrp As String, range_name As String, overwrite As Boolean)
+    ' Initializes the orders range for a given capacity group (capgrp).
+    ' This subroutine creates or retrieves a named range for orders, formats the range,
+    ' and inserts necessary columns such as start and end dates.
+    '
+    ' Parameters:
+    ' capgrp - The name of the capacity group for which the orders range is being initialized.
+    ' range_name - The name of the range to be created or retrieved.
+    ' overwrite - A boolean indicating whether to overwrite the existing range if it exists.
+    '
+    ' The subroutine performs the following actions:
+    ' - Creates or retrieves a named range for the orders.
+    ' - Formats the columns in the range according to predefined formats.
+    ' - Inserts a formula for calculating the number of pallets.
+    ' - Adds additional columns such as "Tank" and "L/O".
+    ' - Sorts the range by bulk code and applies color formatting.
+    ' - Adjusts column widths for better readability.
     Dim rng0 As Range, ws0 As Worksheet, rng1 As Range, c1 As Long
 
     ' create or get named range
@@ -284,6 +484,9 @@ Sub init_orders_range(capgrp As String, range_name As String, overwrite As Boole
       ' get the named range with orders
       Set rng0 = r.get_range(range_name)
     End If
+    
+    ' insert `volgnummer` at the first column of the orders_range
+    insert_volgnummer_into_orders capgrp
     
     ' formatting
     Dim i As Long
@@ -589,12 +792,29 @@ Function get_bulk_capgrp() As Variant
 End Function
 
 Function get_orders_range(capgrp As String) As Range
+    ' Retrieves the orders range for a specified capacity group (capgrp).
+    ' This function returns the range object associated with the named range for orders.
+    '
+    ' Parameters:
+    ' capgrp - The name of the capacity group for which the orders range is being retrieved.
+    '
+    ' Returns:
+    ' A Range object representing the orders range for the specified capacity group.
     Dim ord_range As Range, range_name As String
     range_name = main.get_orders_range_name(capgrp)
     Set get_orders_range = r.get_range(range_name)
 End Function
 
 Sub set_orders_range_values(capgrp As String, values)
+    ' Sets the values for the orders range of a specified capacity group (capgrp).
+    ' This subroutine updates the named range for orders with the provided values.
+    '
+    ' Parameters:
+    ' capgrp - The name of the capacity group for which the orders range is being updated.
+    ' values - The values to be set in the orders range.
+    '
+    ' Note: The subroutine assumes that the named range for orders has been previously created
+    ' and is available in the workbook.
     Dim range_name As String
     range_name = main.get_orders_range_name(capgrp)
     r.updateNamedRangeWithValues range_name, values
@@ -647,6 +867,19 @@ End Function
 
 ' ISAH CAPGRP PLANNING FLOW: per capgrp (sheet), import orders from `INPUT_ISAH_SHEET` and calculate startendtimes
 Sub copy_selected_orders(capgrp As String, Optional clear_ws As Boolean = False, Optional remove_filter As Boolean = True)
+    ' Copies selected orders for a specified capacity group (capgrp) from the ISAH input sheet.
+    ' This subroutine filters and copies orders based on the capacity group and production week,
+    ' and pastes them into the corresponding worksheet for the capacity group.
+    '
+    ' Parameters:
+    ' capgrp - The name of the capacity group for which orders are being copied.
+    ' clear_ws - An optional boolean indicating whether to clear the target worksheet before copying.
+    ' remove_filter - An optional boolean indicating whether to remove the filter after copying.
+    '
+    ' The subroutine performs the following actions:
+    ' - Filters orders from the ISAH input sheet based on the capacity group and production week.
+    ' - Copies the filtered orders to the corresponding worksheet for the capacity group.
+    ' - Restores the default sorting of the ISAH input sheet.
    Dim ws0 As Worksheet, rng0 As Range, ws1 As Worksheet, prodWk As String
    Set ws0 = ThisWorkbook.Sheets(main.INPUT_ISAH_SHEET)
    Set rng0 = r.get_range(ws0)
@@ -1398,6 +1631,13 @@ End Function
 
 ' update ISAH data from template
 Sub clear_orders_range(Optional capgrp As String = "")
+    ' Clears the orders range for a specified capacity group (capgrp).
+    ' This subroutine clears the contents and formatting of the orders range,
+    ' and reduces the named range to a single cell.
+    '
+    ' Parameters:
+    ' capgrp - An optional string specifying the name of the capacity group for which the orders range is being cleared.
+    '          If not provided, the active sheet's name is used.
     Dim range_name As String, ordersRng As Range, rangeToClear As Range
     If capgrp = "" Then
        capgrp = ActiveSheet.name
@@ -1446,6 +1686,22 @@ End Sub
 
 ' TODO: replace capgrp with capgrp_sheet
 Sub update_orders_range(capgrp As String)
+    ' Updates the orders range for a specified capacity group (capgrp) with new data.
+    ' This subroutine clears the existing orders range, sets default inputs, copies selected orders,
+    ' and performs formatting and sorting operations on the updated range.
+    '
+    ' Parameters:
+    ' capgrp - The name of the capacity group for which the orders range is being updated.
+    '
+    ' The subroutine performs the following actions:
+    ' - Clears the existing orders range and sets default inputs for the capacity group.
+    ' - Copies selected orders from the ISAH input sheet to the orders range.
+    ' - Adds necessary columns such as start and end dates.
+    ' - Sorts the range by bulk code and applies color formatting.
+    ' - Updates start and end times for the orders.
+    ' - Adjusts column widths and moves buttons to their designated positions.
+    ' - Updates sorting on the BULK sheet if times change on the capgrp sheet.
+    ' - Stores the current state in the WorksheetStateCollection if enabled.
     Dim ws1 As Worksheet, ws0 As Worksheet, wb0 As Workbook
     Dim r1 As Long, rng1 As Range, range_name As String
     Set wb0 = ThisWorkbook
@@ -1474,6 +1730,9 @@ Sub update_orders_range(capgrp As String)
        Debug.Print "update_orders_range: no orders found for capgrp: `" & capgrp & "`"
        Exit Sub
     End If
+    
+    ' insert `volgnummer`
+    insert_volgnummer_into_orders capgrp
     
     ' 3 sort on bulkcode and color formatting bulkcode column
     r.sort_range_by_columns rng1, main.BULKCODE_COLUMN
@@ -1534,6 +1793,12 @@ Function get_orders_range_name(capgrp_name As String) As String
 End Function
 
 Sub fit_order_range_to_values(capgrp_name As String)
+    ' Adjusts the size of the orders range to fit the actual values for a specified capacity group (capgrp_name).
+    ' This subroutine resizes the named range for orders to match the number of rows with values,
+    ' ensuring that the range accurately reflects the data it contains.
+    '
+    ' Parameters:
+    ' capgrp_name - The name of the capacity group for which the orders range is being adjusted.
     Dim range_name As String, ordersRng As Range, search_column_index As Long
     range_name = main.get_orders_range_name(capgrp_name)
     Set ordersRng = main.get_orders_range(capgrp_name)
@@ -1542,9 +1807,8 @@ Sub fit_order_range_to_values(capgrp_name As String)
     r.fit_named_range_to_values range_name, wb:=ThisWorkbook, searchUpRange:=Range("A999")
 End Sub
 
-
 Sub test_insert_number_of_pallets_formula()
-insert_number_of_pallets_formula "LN 1"
+    insert_number_of_pallets_formula "LN 1"
 End Sub
 
 Sub insert_number_of_pallets_formula(capgrp As String)
@@ -1631,6 +1895,9 @@ Sub insert_record(capgrp As String)
         
         'Update the named range to include the new row
         'r.update_named_range range_name, r.getResizedRange(rng0, add_rows:=1)
+        
+        ' Recalculate volgnummers
+        main.calculate_volgnummer capgrp
     End If
 End Sub
 
@@ -1651,6 +1918,9 @@ Sub delete_record(capgrp As String)
         
         'Recalculate start enddates
         main.update_start_end_times capgrp
+        
+        ' Recalculate volgnummers
+        main.calculate_volgnummer capgrp
     End If
 End Sub
 
@@ -2093,6 +2363,8 @@ Sub isah_export_stage_orders()
         orders_arr = a.select_array_columns(orders_arr, columns_to_select) '=> TODO FIX ?
         orders_arr = a.setArrayHeader(orders_arr, isah_database_columns)
         
+        ' filter out where column ProdHeaderOrdNr is not series of digits
+        
         'if CAPGRP = "INPAK" then get the right Cap.Grp
         If capgrp = "INPAK" Then
            If a.num_array_rows(orders_arr) > 0 Then
@@ -2131,8 +2403,12 @@ nx_i:
 next_capgrp_sheet:
     Next
     
-    ' in result array `orders_arr_all`, filter out all rows where ProdHeaderOrdNr is NULL (Empty or '')
-    OrdersWithOrdNrArray = a.RemoveNullsFromArray(orders_arr_all, "ProdHeaderOrdNr")
+    ' in result array `orders_arr_all`, filter out all rows where ProdHeaderOrdNr does not match pattern ^\\d (starts with digit)
+    OrdersHeaderArray = a.get_array_row(orders_arr_all, 1)
+    column_index = CInt(a.getArrayColumnIndex(orders_arr_all, "ProdHeaderOrdNr"))
+    OrdersNoHeader = a.subset_rows(orders_arr_all, 2)
+    OrdersWithOrdNrArray = a.FilterArrayOnPattern(OrdersNoHeader, "^\d", column_index)
+    OrdersWithOrdNrArray = a.concatArrays(OrdersHeaderArray, OrdersWithOrdNrArray)
     
     ' paste array `orders_arr_all` and create named range `main.ISAH_STAGING_RANGE_NAME`
     a.paste_array OrdersWithOrdNrArray, "A1", ws0
@@ -2967,7 +3243,7 @@ Sub isah_import_articles()
     Set conn = Nothing
 End Sub
 
-' BUTTON HANDLERS
+' 6. UI (BUTTON, DROPDOWN) HANDLERS
 Public Sub btn_update_isah_data_Click()
     Application.ScreenUpdating = False
     Application.EnableEvents = False
@@ -3037,8 +3313,41 @@ Public Sub btn_calculate_dates_Click()
     Application.EnableEvents = True
 End Sub
 
+Public Sub control_sheet_update_database_settings(Optional ByVal Target As Range)
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Dim connectionStrings As Range
+    Dim worksheetChanged As Boolean
+    Dim ws0 As Worksheet: Set ws0 = ThisWorkbook.Sheets(main.CONTROL_SHEET_NAME)
+    
+    If Not Target Is Nothing Then
+       worksheetChanged = Not Intersect(Target, ws0.Range(main.DATABASE_DROPDOWN_ADDR)) Is Nothing
+    Else
+       worksheetChanged = False
+    End If
+    
+    Set connectionStrings = ThisWorkbook.Names(main.CONNECTION_STRINGS_NAMED_RANGE).RefersToRange
+    If worksheetChanged Or True Then
+        Dim selectedName As String
+        Dim i As Long
+        selectedName = Target.value
+        For i = 1 To connectionStrings.Rows.count
+            If connectionStrings.Cells(i, 1).value = selectedName Then
+                ' Do something with the connection string
+                ' For example, store it in another cell
+                ws0.Range(main.SELECTED_CONNECTION_STRING_ADDR).value = connectionStrings.Cells(i, 2).value
+                ws0.Range(main.SELECTED_DATABASE_NAME_ADDR).value = connectionStrings.Cells(i, 3).value
+                Exit For
+            End If
+        Next i
+    Else
+    
+    End If
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+End Sub
 
-' print planning
+' 5. print planning
 Public Sub print_planning(capgrp As String, Optional print_pdf As Boolean = True, Optional delete_print_sheet As Boolean = True)
     Dim ws As Worksheet, rng0 As Range, range_name As String, headerRange As Range
     Dim ws0 As Worksheet, ws1 As Worksheet, rng_orders As Range, rng_workdays As Range, wkNumber As String

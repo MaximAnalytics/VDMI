@@ -18,7 +18,7 @@ Sub test_dict_functions()
     input_string = "key1=value1;key2=value2"
     Set dictObject = dict.getDictionaryFromString(input_string)
     dict.printDictionaryKeyValue dictObject
-    Debug.Assert dictObject.Count = 2
+    Debug.Assert dictObject.count = 2
     Debug.Assert dictObject.item("key1") = "value1"
     ' test `invertDictionaryObject`
     dict.printDictionaryKeyValue dict.invertDictionaryObject(dictObject)
@@ -148,7 +148,6 @@ Function invertDictionaryObject(dictObj As Scripting.Dictionary) As Scripting.Di
     ' Return the inverted dictionary
     Set invertDictionaryObject = invertedDict
 End Function
-
 
 
 

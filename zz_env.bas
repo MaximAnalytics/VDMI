@@ -14,17 +14,19 @@ Sub test_zz_env()
     Debug.Assert zz_env.getVDMIGithub() = "C:\Users\JoelKroodsma\Documents\GitHub\VDMI"
 End Sub
 
-' export modules and export as template
+' export modules to local Github repo
 Sub export_vb_codemodule_code()
     fs.exportModuleCodes MODULES_TO_EXPORT, getVDMIGithub()
     fs.exportModuleCodes VDMI_MODULES_TO_EXPORT, getVDMIGithub()
 End Sub
 
+' import-update modules from local Github repo
 Sub update_vb_codemodule_code()
     fs.updateCodeModules MODULES_TO_IMPORT, getVDMIGithub()
     fs.updateCodeModules VDMI_MODULES_TO_IMPORT, getVDMIGithub()
 End Sub
 
+' create excel macro template with latest code modules
 Sub createExcelMacroTemplate()
     Dim wbname As String, wb1 As Workbook
     timestamp = dt.format_datetime(Now(), "yyyymmdd")
@@ -77,7 +79,6 @@ End Function
 Function getVDMITestPath() As String
     getVDMITestPath = os.pathJoin(getWorkPath(), "VDMI\testdata")
 End Function
-
 
 
 

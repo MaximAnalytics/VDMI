@@ -7,7 +7,7 @@ Private Sub Worksheet_Change(ByVal Target As Range)
     Dim wb0 As Workbook, ws0 As Worksheet, listenerRng As Range, rng0 As Range, num_cols As Long, capgrp As String, _
     orders_range_name As String, worktimes_range_name As String, worktimes0 As Range, ordersRange As Range, _
     durationRange As Range, qtyRange As Range, wkNumberRange As Range, targetRange As Range, _
-    ordersRangeFooter As Range
+    ordersRangeFooter As Range, volgnummerRange As Range
     
     Set wb0 = ThisWorkbook
     Set ws0 = Target.Worksheet
@@ -59,6 +59,8 @@ On Error GoTo handle_error
         Set durationRange = r.get_column(ordersRange, main.DURATION_COLUMN)
         Set qtyRange = r.get_column(ordersRange, main.QTY_COLUMN)
         Set worktimes0 = wb0.Names(worktimes_range_name).RefersToRange
+        Set volgnummerRange = r.get_column(ordersRange, main.ORDERS_RANGE_VOLGNUMMER_COLUMN)
+        
         If main.P_DEBUG Then
            warningString = str.subInStr("Worksheet_Change on @1, target address is: @2", ws0.name, target_address)
            Debug.Print warningString
@@ -69,10 +71,12 @@ On Error GoTo handle_error
         Dim eventWorkDayTimesRange As Boolean
         Dim eventOrdersFooter As Boolean
         Dim eventDurationRange As Boolean
+        Dim eventVolgnummerRange As Boolean
         
         eventOrdersRange = Not Intersect(Target, ordersRange) Is Nothing
         eventWorkDayTimesRange = Not Intersect(Target, worktimes0) Is Nothing
         eventDurationRange = Not Intersect(Target, durationRange) Is Nothing
+        eventVolgnummerRange = Not Intersect(Target, volgnummerRange) Is Nothing
         
         ' Handle events on ordersRange but not triggered from changes in worktimes (row inserts, deletes, updates)
         ' If Target is header OR multiple rows, then skip.
@@ -88,7 +92,7 @@ On Error GoTo handle_error
                 Exit Sub
             End If
             
-            ' if target does NOT come from workdaytimes AND is multirow
+            ' if target does NOT come from workdaytimes AND is multirow, dont do anything
             If Not eventWorkDayTimesRange Then
                 ' if target is multirows
                 If Target.Cells.count > 1 And main.WORKSHEET_IGNORE_MULTIROW_EVENTS Then
@@ -114,7 +118,7 @@ On Error GoTo handle_error
            Debug.Print warningString
         End If
         
-        ' update orders: start_end_times, color formats, bulk sorting
+        ' if target is duration or worktimerange or last order (footer): update orders range start_end_times, color formats, bulk sorting
         If eventDurationRange Or eventWorkDayTimesRange Or eventOrdersFooter Then
             If main.P_DEBUG Then
                Debug.Print "data changed on sheet " & ws0.name & ", cell:" & target_address
@@ -126,6 +130,11 @@ On Error GoTo handle_error
                r.ClearAllBorders main.get_worktimes_values_range(capgrp)
                r.add_outside_border main.get_worktimes_values_range(capgrp)
             End If
+        End If
+        
+        ' if target is the ordersRange then recalculate the Volgnummer
+        If eventOrdersRange Then
+           main.calculate_volgnummer capgrp
         End If
                 
         ' return to current ws

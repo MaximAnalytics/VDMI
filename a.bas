@@ -448,8 +448,8 @@ Function to_array(x As Variant) As Variant()
         Set col0 = x
         Dim arr As Variant
         arr = Array()
-        If col0.Count > 0 Then
-            ReDim arr(1 To col0.Count)
+        If col0.count > 0 Then
+            ReDim arr(1 To col0.count)
             i = 1
             For Each it In col0
                 arr(i) = it
@@ -667,9 +667,9 @@ End Sub
 Sub printArrayBounds(arr As Variant, Optional array_name As String = "")
     If IsArray(arr) Then
         If a.is_1d_array(arr) Then
-            Debug.Print str.subInStr("lbound is: @1 ubound is: @2", LBound(arr), UBound(arr))
+            Debug.Print "lbound is:", LBound(arr), "ubound is:", UBound(arr)
         Else
-            Debug.Print str.subInStr("lbound dim 1 is: @1 ubound dim 1 is: @2 lbound dim 2 is: @3 ubound dim 2 is: @4", LBound(arr, 1), UBound(arr, 1), LBound(arr, 2), UBound(arr, 2))
+            Debug.Print "lbound dim 1 is:", LBound(arr, 1), "ubound dim 1 is:", UBound(arr, 1), "lbound dim 2 is:", LBound(arr, 2), "ubound dim 2 is:", UBound(arr, 2)
         End If
     End If
 End Sub
@@ -811,6 +811,8 @@ print_mismatch:
     End If
 End Function
 
+
+
 Function FindArrayIndex(arr As Variant, value As Variant, Optional axis = 0, Optional index0 = 1) As Long
     ' find either the first row index of column `index0` or the first column index of row `index0` where arr(i,index0)==value
     If axis = 0 Then
@@ -913,7 +915,7 @@ Function getIndexOfArray(value As Variant, arr As Variant) As Long
             Err.Raise vbObjectError + 1, "get_index_of_value", "Index " & value & " not found in range"
         End If
     ElseIf VarType(match_index) = vbLong Or VarType(match_index) = vbInteger Then
-        If match_index < 1 Or match_index > rng.Cells.Count Then
+        If match_index < 1 Or match_index > rng.Cells.count Then
             Err.Raise vbObjectError + 1, "get_index_of_value", "Index " & value & " not found in range"
         End If
     Else
@@ -1223,7 +1225,7 @@ Function select_array_columns(arr As Variant, column_names As Variant) As Varian
     Next colName
     
     ' Get the number of selected columns
-    numCols = selectedColumns.Count
+    numCols = selectedColumns.count
     
     If numCols > 0 Then
         ' Get the number of rows
@@ -1366,7 +1368,7 @@ Function QueryArray(arr As Variant, ParamArray criteria()) As Variant
         Next j
         
         ' If no rows are found, return the headerArr
-        filteredRowsCount = filteredRows.Count
+        filteredRowsCount = filteredRows.count
         If filteredRowsCount = 0 Then
             QueryArray = headerArr
             Exit Function
@@ -1662,6 +1664,5 @@ Function AppendColumn(arr0 As Variant, Optional values As Variant = "", Optional
     ' Return the modified array
     AppendColumn = arr
 End Function
-
 
 

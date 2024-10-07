@@ -100,4 +100,3 @@ Function regexp_match(s As String, pattern As String) As Boolean
     regexp_match = regex.test(s)
 End Function
 
-
