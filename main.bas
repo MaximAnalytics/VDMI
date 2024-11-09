@@ -560,6 +560,10 @@ Function get_weeknumber_range(capgrp As String) As Range
     Set get_weeknumber_range = r.get_range(capgrp & "_input_weeknumber")
 End Function
 
+Function get_weeknumber(capgrp As String) As Integer
+    get_weeknumber = CInt(main.get_weeknumber_range(capgrp).Cells(2, 2).value)
+End Function
+
 Sub init_print_file_range(capgrp As String)
     range_name = capgrp & "_input_print_location"
     r.create_named_range range_name, capgrp, main.PRINT_FILE_RANGE_ADDRESS, header_row:=",", id_row:=main.PRINT_FILE_RANGE_IDS, overwrite:=True
@@ -1476,7 +1480,7 @@ Function calculate_start_end_times(capgrp As String, startDate As Date, Optional
     
     ' loop over each article i
     j0 = 1
-    For Each i In a.get_row_indexes(articles_arr)
+    For Each i In a.getRowIndexes(articles_arr)
         duration = duration_arr(i, 1)
         If Len(duration) <= 0 Then
            GoTo next_art
@@ -2338,7 +2342,7 @@ Sub isah_export_stage_orders()
     ' first get named ranges of orders
     Set capgrp_sheets = main.get_capgrp_sheet_names()
     Dim r0 As Integer, n As Long, orders_arr_all As Variant, ws0 As Worksheet
-    Dim columns_to_select As Variant, orderNrCapgrp As String
+    Dim columns_to_select As Variant, orderNrCapgrp As String, weekNr As Integer, capgrp As String
       
     'parameters
     columns_to_select = Split(main.ISAH_STAGING_COLUMNS, ";")
@@ -2365,20 +2369,31 @@ Sub isah_export_stage_orders()
         
         ' filter out where column ProdHeaderOrdNr is not series of digits
         
-        'if CAPGRP = "INPAK" then get the right Cap.Grp
+        ' if CAPGRP = "INPAK" then get the right Cap.Grp
         If capgrp = "INPAK" Then
            If a.num_array_rows(orders_arr) > 0 Then
+           
               orders_arr = a.AppendColumn(orders_arr, "", main.ISAH_STAGING_CAGGRP_COLUMN)
               cl_index = a.FindArrayColumnIndex(orders_arr, "ProdHeaderOrdNr")
-              'a.printArray orders_arr
-              For Each rw_index In a.get_row_indexes(orders_arr)
+              
+              For Each rw_index In a.getRowIndexes(orders_arr)
                   If rw_index <= 1 Then
                      GoTo nx_i
                   End If
                   orderNr = Trim(orders_arr(rw_index, cl_index))
+                  
                   'For INPAK recover the original Cap.Grp => v20240301
-                  orders_arr_filtered = a.QueryArray(arrForProductieOrder, "Productieorder", CStr(orderNr))
-                  'a.printArray orders_arr_filtered
+                  If main.P_DEBUG Then
+                    Debug.Print "finding capgrp of Productiorder " & CStr(orderNr)
+                  End If
+                  
+                  ' if orderNr is not defined then skip (for example Ombouwregel)
+                  If CStr(orderNr) = "" Then
+                    GoTo nx_i
+                  End If
+                  
+                  weekNr = main.get_weeknumber(capgrp)
+                  orders_arr_filtered = a.QueryArray(arrForProductieOrder, "Productieorder", CStr(orderNr), "ProdWk", weekNr)
                   orderNrCapgrp = Trim(a.getNamedArrayValue(orders_arr_filtered, "Cap.Grp"))
                   orders_arr(rw_index, UBound(orders_arr, 2)) = orderNrCapgrp
 nx_i:

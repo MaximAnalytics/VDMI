@@ -45,7 +45,7 @@
 'getIndexOfArray(value, arr) => Finds index of value in array
 'get_array_column(arr, i, row_offset) => Extracts a column from array
 'get_array_row(arr, j) => Extracts a row from array
-'get_row_indexes(arr) => Returns collection of row indexes
+'getRowIndexes(arr) => Returns collection of row indexes
 'subset_rows(arr, start_row, end_row) => Subsets array rows
 'subset_columns(arr, start_column, end_column, start_row, end_row) => Subsets array columns
 'resize_array(arr0, r0, r1, c0, c1) => Resizes array by subsetting
@@ -138,13 +138,15 @@ Sub test_array_functions()
     ' these shouldnt
     Debug.Assert Not (a.ArraysAreEqual(vec0, vec1) Or a.ArraysAreEqual(vec1, matrix))
     
-    'test: subset rows, columns and count rows/columns and resize_rows
+    '4. subset rows, columns and count rows/columns and resize_rows
     arr1 = a.resize_array(arr0, 2) 'without header
     Debug.Assert a.num_array_columns(arr1) = 2 And a.num_array_rows(arr1) = 9
     arr_subset_cols = a.subset_columns(arr0, 2, 2)
     Debug.Assert a.num_array_columns(arr_subset_cols) = 1 And a.num_array_rows(arr_subset_cols) = 10
     arr_subset_rows = a.subset_rows(arr0, 1, 5)
     Debug.Assert a.num_array_columns(arr_subset_rows) = 2 And a.num_array_rows(arr_subset_rows) = 5
+    
+    Debug.Print getRowIndexes(Array()).count = 0
     
     ' test: FindArrayIndex
     row1 = a.convertTo2DArray(Array("B", 2), axis:=1)
@@ -982,13 +984,13 @@ Function get_array_row(arr As Variant, j As Long) As Variant
     get_array_row = resultArr
 End Function
 
-Function get_row_indexes(arr As Variant) As collection
+Function getRowIndexes(arr As Variant) As collection
     Dim row_indexes As New collection
     Dim i As Long
     For i = LBound(arr, 1) To UBound(arr, 1)
         row_indexes.Add i
     Next i
-    Set get_row_indexes = row_indexes
+    Set getRowIndexes = row_indexes
 End Function
 
 Function getColumnValue(arr As Variant, row_index As Integer, column_index_name As Variant) As Variant
@@ -1538,8 +1540,10 @@ Function getNamedArrayValue(arr As Variant, columnname As String) As Variant
     numRows = num_array_rows(arr)
     
     ' Raise an error if the array does not have exactly two rows: header + values
-    If numRows <> 2 Then
-        Err.Raise 1002, "getNamedArrayValue", "Array must have exactly two rows"
+    If numRows < 2 Then
+        Err.Raise 1002, "getNamedArrayValue", "Arr only has header (no data row)"
+    ElseIf numRows > 2 Then
+        Err.Raise 1002, "getNamedArrayValue", "Arr has multiple data rows"
     End If
     
     ' Find the column index by the column name
