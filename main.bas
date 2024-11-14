@@ -12,7 +12,7 @@ Global Const ERR_MSG_NO_ARTICLES As String = "Geen artikelen gevonden in T_Part"
 Global Const ERR_MSG_NO_BULK_CODES As String = "Geen ISAH bulken aanwezig op Template"
 
 ' Settings (P_)
-Global Const P_DEBUG = True
+Global Const P_DEBUG = False
 Global Const test_mode = "TEST" 'values are: HOME, TEST, PROD
 Global Const WORKSHEET_IGNORE_MULTIROW_EVENTS = False
 
@@ -159,7 +159,7 @@ Global Const CHECK_BOM_REQUIRED_DATE_SHEET_COLUMNS_MAP = "ProdHeaderDossierCode=
 Global Const ISAH_MANUAL_UPDATE_PRODBOOSTATUSCODE = "20" ' in ProdBOO set field ProdBOOStatusCode to this value
 
 ' Worksheet sorting
-Global Const SHEETS_START_ORDER = "instructie;overzicht;Template;BULK;X"
+Global Const SHEETS_START_ORDER = "instructie;overzicht;Template;BULK"
 Global Const LAST_CAPGRP_SHEET_NAME = "LN18"
 
 ' variables
@@ -606,18 +606,21 @@ Sub init_worksheet_sorting()
     Dim sheetOrder As New collection, newSheets As collection, lnSheetNames As collection
     ' start with SHEETS_START_ORDER
     Set newSheets = clls.toCollection(main.SHEETS_START_ORDER, ";")
-    Set sheetOrder = clls.concatCollections(sheetOrder, newSheets)
     
     ' add the LN sheets
     Set lnSheetNames = main.get_capgrp_sheet_names()
-    Set sheetOrder = clls.concatCollections(sheetOrder, lnSheetNames)
+    Set sheetOrder = clls.concatCollections(newSheets, lnSheetNames)
     
     ' finally: INPAK, ...
     Set newSheets = clls.toCollection("INPAK;" & main.NUMBER_PER_PALLET_SHEET_NAME, ";")
     Set sheetOrder = clls.concatCollections(sheetOrder, newSheets)
     
     ' order the sheets
+    Application.EnableEvents = False
+    On Error Resume Next
     w.orderSheets sheetOrder
+    On Error GoTo 0
+    Application.EnableEvents = True
 End Sub
 
 ' control sheet
@@ -1009,6 +1012,7 @@ Sub update_bulk_capgrp_orders()
    start_address = "$" & u.remove_dollar_sign(r.get_column(range_name, main.BULK_ORDER_SHEET_BULKCODE).Cells(2).address)
 
    ' for each capgrp_sheet, create a column with VLOOKUP on BULK sheet
+   Dim lastFormulaRangeAddr As String
    Set capgrp_sheets = main.get_capgrp_sheet_names()
    For Each c In capgrp_sheets
        capgrp_sheet = c
@@ -1026,6 +1030,10 @@ Sub update_bulk_capgrp_orders()
         
        ' format formula range as datetime
        formula_range.Cells.NumberFormat = main.BULK_DATETIME_COLUMN_FORMAT
+       
+       ' get last column, first row
+       lastFormulaRangeAddr = formula_range.Cells(1, 1).address
+       
 next_c:
     Next c
     
@@ -1034,15 +1042,15 @@ next_c:
     Set rng0 = r.get_range(range_name)
     Set capgrp_columns_range = r.subset_range(rng0, startcol:=c0 + 1)
 
-    Dim calcRange As Range, START_CALCULATION_RANGE As String, calcFormulasRange As Range, cl As Range, sortColumnInputAddress As String
-    START_CALCULATION_RANGE = "Q10"
-    r.copyRangeFormulas capgrp_columns_range, START_CALCULATION_RANGE, Worksheets(main.BULK_SHEET_NAME)
-    Set calcRange = r.expand_range(START_CALCULATION_RANGE, rng0.Worksheet)
+    Dim calcRange As Range, START_CALCULATION_ADDR As String, calcFormulasRange As Range, cl As Range, sortColumnInputAddress As String
+    START_CALCULATION_ADDR = r.safe_offset(Range(lastFormulaRangeAddr), offset_column:=1).address
+    r.copyRangeFormulas capgrp_columns_range, START_CALCULATION_ADDR, Worksheets(main.BULK_SHEET_NAME)
+    Set calcRange = r.expand_range(START_CALCULATION_ADDR, rng0.Worksheet)
     Set calcFormulasRange = r.subset_range(calcRange, 2)
     For Each cl In calcFormulasRange.Cells
         cl.formula = "=" & returnStringWithinBrackets(cl.formula)
     Next
-    
+
     ' calculation range formatting
     calcRange.columns.AutoFit
     calcRange.Cells.NumberFormat = main.BULK_DATETIME_COLUMN_FORMAT
@@ -1470,9 +1478,9 @@ Function calculate_start_end_times(capgrp As String, startDate As Date, Optional
     startdates_out = a.create_array(a.num_array_rows(ord), 1)
     
     'get the first starttime from the workdaytimes array (wdt)
-    Dim starttime As Double, endtime As Double
+    Dim startTime As Double, endtime As Double
     jT = a.num_array_rows(wdt)
-    starttime = wdt(1, 1)
+    startTime = wdt(1, 1)
     
     ' create empty start_end_times array
     Dim start_end_planned() As Variant, j0 As Long, dur As Double
@@ -1486,16 +1494,16 @@ Function calculate_start_end_times(capgrp As String, startDate As Date, Optional
            GoTo next_art
         End If
         
-        block_starttime = find_block_starttime(wdt, j0, starttime, dbg:=dbg)
+        block_starttime = find_block_starttime(wdt, j0, startTime, dbg:=dbg)
         j0 = block_starttime(0)
-        starttime = block_starttime(1)
-        start_end_times(i, 1) = starttime
+        startTime = block_starttime(1)
+        start_end_times(i, 1) = startTime
         dur = CDbl(duration_arr(i, 1))
-        block_endtime = find_block_endtime(wdt, j0, starttime, dur, dbg:=dbg)
+        block_endtime = find_block_endtime(wdt, j0, startTime, dur, dbg:=dbg)
         start_end_times(i, 2) = block_endtime(1)
         
         ' set endtime as next starttime
-        starttime = block_endtime(1)
+        startTime = block_endtime(1)
         j0 = block_endtime(0)
         
         ' checks:
@@ -1510,13 +1518,13 @@ next_art:
     calculate_start_end_times = start_end_times
 End Function
 
-Function find_block_starttime(wdt As Variant, j0 As Long, ByVal starttime, Optional prep As Long = 0, _
+Function find_block_starttime(wdt As Variant, j0 As Long, ByVal startTime, Optional prep As Long = 0, _
 Optional dbg As Boolean = True) As Variant
     Dim jT As Long
     jT = UBound(wdt, 1) - LBound(wdt, 1) + 1
     
     Dim starttime2 As Double
-    starttime2 = m.round_up_to_nearest_quarter(CDbl(starttime))
+    starttime2 = m.round_up_to_nearest_quarter(CDbl(startTime))
     If j0 > jT Then
         last_block_time = get_last_block(wdt)
         If dbg Then
@@ -1550,7 +1558,7 @@ Optional dbg As Boolean = True) As Variant
     End If
 End Function
 
-Function find_block_endtime(wdt As Variant, j0 As Long, starttime As Double, dur As Double, Optional dbg As Boolean = True _
+Function find_block_endtime(wdt As Variant, j0 As Long, startTime As Double, dur As Double, Optional dbg As Boolean = True _
 ) As Variant
     Dim dur1 As Double, startworktime As Double, endworktime As Double, j As Long
     dur1 = dur ' is in hours
@@ -1569,13 +1577,13 @@ Function find_block_endtime(wdt As Variant, j0 As Long, starttime As Double, dur
     End If
     
     Dim endtime As Double
-    endtime = dt.add_hours(starttime, dur1)
+    endtime = dt.add_hours(startTime, dur1)
 
     'cases: 1. starttime, endtime fits in active block j0
     startworktime = wdt(j0, 1)
     endworktime = wdt(j0, 2)
     ind_active = wdt(j0, 3)
-    If (m.gte_dbl(starttime, startworktime) And m.lte_dbl(endtime, endworktime)) And ind_active = 1 Then  ' use gte_dbl because of precision issue
+    If (m.gte_dbl(startTime, startworktime) And m.lte_dbl(endtime, endworktime)) And ind_active = 1 Then  ' use gte_dbl because of precision issue
         endtime = m.round_up_to_nearest_quarter(endtime)
         find_block_endtime = Array(j0, endtime)
         If dbg Then
@@ -1591,7 +1599,7 @@ Function find_block_endtime(wdt As Variant, j0 As Long, starttime As Double, dur
         Debug.Print "endtime ", endtime, "doesnt fit in block", j0, "but is last block"
         End If
     End If
-    dur1 = dur1 - 24 * (endworktime - starttime)
+    dur1 = dur1 - 24 * (endworktime - startTime)
     If dbg Then
        Debug.Print "moving to next block", j0 + 1, "with residual duration", dur1
     End If
@@ -2478,7 +2486,6 @@ Sub isah_export_match_prodheader()
     where_statement = db.sqlWhereInCondition(orders_to_query, main.ISAH_DATABASE_ORDERNR_COLUMN, mssql)
     sql_template = "SELECT LTRIM(RTRIM(@1)) as @2, @3, @4 FROM @5 @6;"
     sql0 = str.subInStr(sql_template, ordernr_db_column, ordernr_db_column, main.ISAH_DATABASE_DATE_COLUMNS, dossiercode_column, table_name, where_statement)
-    Debug.Print sql0
     
     'input for T_ProductionHeader: connect to db and execute query
     Dim sqlconn As ADODB.Connection, rs0 As ADODB.Recordset
@@ -2486,13 +2493,16 @@ Sub isah_export_match_prodheader()
   
 On Error GoTo close_connection
     Set rs0 = db.queryDB(sqlconn, sql0)
-    db.printRecordset rs0, False, False
+    'db.printRecordset rs0, False, False
     result_array = db.RecordSetToArray(rs0)
     sqlconn.Close
 On Error GoTo 0
     GoTo no_error
     
 close_connection:
+    If main.P_DEBUG Then
+       Debug.Print "Error querying: ", sql0
+    End If
     sqlconn.Close
     Err.Raise Err
     
@@ -2638,19 +2648,34 @@ nx_i:
     
     c = 0
     ' connection management: make sure to close connections on error
-    On Error GoTo close_connection
+    ' On Error GoTo close_connection
+    ' transaction management
+    conn0.BeginTrans
+    
+    On Error GoTo TransactionError ' Set up error handling
+    
     For Each stat In sqlStatements
-       Debug.Print stat
        conn0.Execute CStr(stat)
        c = c + 1
     Next
-    On Error GoTo 0
-GoTo no_error
+    conn0.CommitTrans
+    
+    On Error GoTo no_error
 
 'errorhandler
+TransactionError:
+    cn.RollbackTrans
+    If main.P_DEBUG Then
+       Debug.Print "Transaction failed, updates have been rolled back"
+    End If
+     
 close_connection:
+    If main.P_DEBUG Then
+       Debug.Print "Database error executing: " & stat
+    End If
     conn0.Close
     Err.Raise Err
+    
 no_error:
     conn0.Close
     
@@ -2961,8 +2986,9 @@ On Error GoTo close_connection
     
     ' Query `sql_check_columns` from `sqlconn` and store result as array `ProdBOOArray`
     ProdBOOArray = db.RecordSetToArray(db.queryDB(sqlconn, sql_check_columns))
-    a.printArray ProdBOOArray
-    
+    If main.P_DEBUG Then
+       a.printArray ProdBOOArray
+    End If
     ' Close connection to ISAH database
     sqlconn.Close
     
@@ -3069,7 +3095,9 @@ Sub isah_export_update_prodbom()
     
     ' Print the update statements
     For Each sqlUpdate In updateStatements
-        Debug.Print sqlUpdate
+        If main.P_DEBUG Then
+           Debug.Print sqlUpdate
+        End If
     Next sqlUpdate
     
     ' clean up
@@ -3085,7 +3113,6 @@ On Error GoTo close_connection
     Set conn = main.getISAHconnection()
     For Each sqlUpdate In updateStatements
         db.executeSql conn, CStr(sqlUpdate)
-        'Debug.Print sqlUpdate
     Next sqlUpdate
     
 On Error GoTo 0
@@ -3093,6 +3120,7 @@ GoTo no_error
   
 close_connection:
     ' Close connection to ISAH database
+    Debug.Print "Database error: " & sqlUpdate
     conn.Close
     Set conn = Nothing
     Err.Raise Err
@@ -3166,11 +3194,20 @@ Sub isah_export_match_bom_dates()
 End Sub
 
 Public Sub isah_export_run_all()
+    Dim t As Timer
+    Set t = New Timer
+    
     ' prepare the staging sheet `EXPORT_ISAH` using capgrp sheets
     main.isah_export_stage_orders
     
+    t.Start ' Start the timer
+    
     ' connect to ISAH database and update the MachGrpCode, Qty and StandCapacity in `ProdBillOfOperation`
     main.isah_export_update_prodboo_grp
+    
+    Debug.Print t.StopTimer 'Stop the timer
+    
+    Exit Sub
 
     ' connect to ISAH database and match orders to dossier in `ProdHeader` table
     main.isah_export_match_prodheader
@@ -3487,7 +3524,7 @@ Public Sub print_planning(capgrp As String, Optional print_pdf As Boolean = True
     End With
     
     'Set the header text and format
-    header_text = "Planning week " & wkNumber & " " & capgrp
+    header_text = "Planning wk " & wkNumber & " " & capgrp
     ws.Range(main.PRINT_TITLE_START).value = header_text
     ws.Range(main.PRINT_TITLE_RANGE).Select
     With Selection
@@ -3553,7 +3590,7 @@ nx_break:
     
     ' Start printing dialog
     If print_pdf = False Then
-      'Print the named range
+      'Open the Print dialogue box
       Application.Dialogs(xlDialogPrint).Show
     Else
       'Suppress the save dialog box
@@ -3561,6 +3598,7 @@ nx_break:
         
       'Print the named range to a PDF file
        print_rng.ExportAsFixedFormat Type:=xlTypePDF, Filename:=main.get_capgrp_print_location(capgrp), Quality:=xlQualityStandard, IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:=False
+       Debug.Print str.subInStr("PDF `@1` exported to `@2`", capgrp, main.get_capgrp_print_location(capgrp))
         
       'Restore the display alerts setting
        Application.DisplayAlerts = True
@@ -3573,6 +3611,11 @@ nx_break:
        ws0.Activate
     End If
     
+End Sub
+
+Sub test_print_pdf()
+main.print_planning "LN 1", True
+
 End Sub
 
 Sub SetCustomFooter(pgSetup As PageSetup, ctext, ltext, rtext)
@@ -3890,5 +3933,8 @@ Sub init_articles_per_pallet()
       main.btn_isah_update_aantal_per_pallet_Click False
    End If
 End Sub
+
+
+
 
 
