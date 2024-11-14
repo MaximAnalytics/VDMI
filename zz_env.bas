@@ -26,6 +26,13 @@ Sub update_vb_codemodule_code()
     fs.updateCodeModules VDMI_MODULES_TO_IMPORT, getVDMIGithub()
 End Sub
 
+' import-update modules from passed list
+Sub update_vb_specific_modules(code_modules_to_update As String)
+    For Each modfile In clls.toCollection(code_modules_to_update, ";")
+       fs.updateCodeModules CStr(modfile), getVDMIGithub()
+    Next
+End Sub
+
 ' create excel macro template with latest code modules
 Sub createExcelMacroTemplate()
     Dim wbname As String, wb1 As Workbook

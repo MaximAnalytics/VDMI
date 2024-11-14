@@ -19,7 +19,7 @@
 '`test_protect_sheets()` => Unprotects all sheets in the active workbook.
 
 ' 5. worksheet sorting
-'`order_sheets(sheetNames())` => Reorders worksheets in the active workbook according to the provided array of sheet names.
+'`orderSheetsUsingNames(sheetNames())` => Reorders worksheets in the active workbook according to the provided array of sheet names.
 '`orderSheets(sheetNamesCol)` => Reorders worksheets in the active workbook based on the order of names in the given collection.
 
 ' 6. workbook generators, getters
@@ -156,7 +156,7 @@ Sub move_ws(wsName, Optional before_ws = "", Optional after_ws = "", Optional wb
     End If
 End Sub
 
-Sub order_sheets(ParamArray sheetNames() As Variant)
+Sub orderSheetsUsingNames(ParamArray sheetNames() As Variant)
     Dim wb As Workbook
     Set wb = ThisWorkbook
     
@@ -212,6 +212,7 @@ Sub orderSheets(sheetNamesCol As collection)
         On Error Resume Next
             Set ws = wb.Sheets(sheetNames(i))
         On Error GoTo 0
+        
         c = c + 1
         Debug.Print "sheet name is:", wsName
 
