@@ -555,18 +555,18 @@ Function create_vector(num_rows As Integer, Optional default_value As Variant, O
     create_vector = arr
 End Function
 
-Function create_integer_vector(Optional start As Integer = 1, Optional endVal As Integer = 100) As Variant
+Function create_integer_vector(Optional Start As Integer = 1, Optional endVal As Integer = 100) As Variant
     Dim i As Integer
     Dim arr() As Integer
     
-    If start > endVal Then
+    If Start > endVal Then
         Err.Raise 5, , "Start value must be less than or equal to end value."
         Exit Function
     End If
     
-    ReDim arr(start To endVal)
+    ReDim arr(Start To endVal)
     
-    For i = start To endVal
+    For i = Start To endVal
         arr(i) = i
     Next i
     
@@ -627,6 +627,19 @@ Function num_array_rows(arr As Variant) As Integer
         End If
     Else
         num_array_rows = -1
+    End If
+End Function
+
+' better name
+Function numArrayRows(arr As Variant) As Integer
+    If IsArray(arr) Then
+        If is_2d_array(arr) Then
+           numArrayRows = UBound(arr, 1) - LBound(arr, 1) + 1
+        Else
+           numArrayRows = 1 ' convention
+        End If
+    Else
+        numArrayRows = -1
     End If
 End Function
 
@@ -1455,6 +1468,10 @@ Function RemoveNullsFromVector(ByVal arr As Variant) As Variant
     RemoveNullsFromVector = RemoveNullsFromArray(convertTo2DArray(arr), 1)
 End Function
 
+Sub test()
+Dim filteredArr As Variant
+Debug.Print a.num_array_rows(filteredArr)
+End Sub
 Function FilterArrayOnPattern(arr As Variant, pattern As String, ParamArray filterColumns() As Variant) As Variant
     ' This function filters out rows from a 2D array where specified columns match a given regular expression pattern.
     ' arr - The 2D array to be filtered.
@@ -1469,14 +1486,12 @@ Function FilterArrayOnPattern(arr As Variant, pattern As String, ParamArray filt
     Dim filteredArr As Variant
     Dim regex As Object
     
-    ' Initialize the filteredArr as header
-    If a.num_array_rows(arr) < 1 Then
+    ' Check if array to filter has any rows
+    If a.numArrayRows(arr) < 1 Then
        Debug.Print "FilterArrayOnPattern: arr has no records"
        FilterArrayOnPattern = arr
        Exit Function
     End If
-    
-    filteredArr = a.get_array_row(arr, LBound(arr, 1))
     
     ' Create a regular expression object
     Set regex = CreateObject("VBScript.RegExp")
@@ -1485,7 +1500,7 @@ Function FilterArrayOnPattern(arr As Variant, pattern As String, ParamArray filt
     regex.Global = True
     
     ' Loop through each row of the array
-    For i = LBound(arr, 1) + 1 To UBound(arr, 1)
+    For i = LBound(arr, 1) To UBound(arr, 1)
         ' Assume the row is to be excluded until a pattern match is found
         includeRow = False
         
@@ -1508,8 +1523,12 @@ Function FilterArrayOnPattern(arr As Variant, pattern As String, ParamArray filt
         If includeRow Then
             ' Get the current row as a 2D array
             currentRow = a.get_array_row(arr, i)
-            ' Add the current row to the resultArr
-            filteredArr = a.concatArrays(filteredArr, currentRow)
+            ' Add the current row to the result filteredArr
+            If a.numArrayRows(filteredArr) < 1 Then
+               filteredArr = currentRow
+            Else
+               filteredArr = a.concatArrays(filteredArr, currentRow)
+            End If
         End If
     Next i
     
@@ -1668,5 +1687,6 @@ Function AppendColumn(arr0 As Variant, Optional values As Variant = "", Optional
     ' Return the modified array
     AppendColumn = arr
 End Function
+
 
 
