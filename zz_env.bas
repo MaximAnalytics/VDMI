@@ -5,9 +5,9 @@ Global Const GITHUBPATH = "C:\Users\jskro\Documents\GitHub;C:\Users\JoelKroodsma
 Global Const MSSQL_HOME_CONN_STR = "Driver={ODBC Driver 17 for SQL Server};Server=LAPTOP_JKR\SQLEXPRESS;Database=master;Trusted_Connection=yes;"
 
 ' code modules
-Global Const MODULES_TO_EXPORT = "a;chrt;clls;ctr;db;dict;dt;fs;m;os;r;str;u;vb;w;zz_env"
+Global Const MODULES_TO_EXPORT = "a;chrt;clls;ctr;db;dict;dt;fs;m;os;r;str;u;vb;w;zz_env;Timer"
 Global Const VDMI_MODULES_TO_EXPORT = "main;main_isah_queries;database_control;state_control;ThisWorkbook;Sheet8;Sheet21;tests"
-Global Const MODULES_TO_IMPORT = "a.bas;chrt.bas;clls.bas;ctr.bas;db.bas;dict.bas;dt.bas;m.bas;os.bas;r.bas;str.bas;u.bas;vb.bas;w.bas"
+Global Const MODULES_TO_IMPORT = "a.bas;chrt.bas;clls.bas;ctr.bas;db.bas;dict.bas;dt.bas;m.bas;os.bas;r.bas;str.bas;u.bas;vb.bas;w.bas;Timer.cls"
 Global Const VDMI_MODULES_TO_IMPORT = "main.bas;main_isah_queries.bas;database_control.bas;state_control.bas;ThisWorkbook.bas;Sheet8.bas;Sheet21.bas;tests.bas"
 
 Sub test_zz_env()
