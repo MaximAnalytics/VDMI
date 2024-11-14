@@ -3,7 +3,7 @@
 '1. import ISAH data capgrp sheets
 
 Global Const testdatabase = "JKR2"
-Global Const release_database = "TEST"
+Global Const release_database = "PROD"
 Global Const current_prodwk = 29
 Global Const previous_prodwk = 28
 Global Const CAPGRP_START_ROW = 14
@@ -22,27 +22,31 @@ Sub test_all()
     ' 1. IMPORT DATE (overhalen orders): INPUT PRODWK29 LN1
     tests.set_input_isah_to_wk29_ln1
     tests.test_btn_import_art_ln1
-
+    
     ' 2. CONTROLS: PRODWK29
     tests.set_input_isah_to_wk29
     tests.test_add_capgrp ' remove and re-add LN18
+    
     tests.test_btn_import_art_all
     tests.test_btn_import_bulk
     tests.test_bulk_sheet_values
-    
+    'Exit Sub
     ' 3. ADD/REMOVE/MUTATE/PRINT capgrp LN1 orders
     tests.test_prodwk29_ln1
     
     ' 4. ISAH import/export
-    If testdatabase = "JKR" Then
+    If testdatabase = "JKR" Or testdatabase = "JKR2" Then
        tests.insert_update_isah_testdata_tables
     End If
     tests.test_isah_staging_ln1
     tests.test_isah_imports
     tests.test_isah_export
     
-    ' State control
+    ' 5. State control
     tests.test_state_control
+    
+    ' 6. test adding multiple new capgrps
+    tests.test_set_new_capgrps
     
     If P_RELEASE Then
        tests.set_for_release
@@ -50,6 +54,25 @@ Sub test_all()
     
 Exit Sub
 
+End Sub
+
+Sub set_input_isah_to_wk46_new_capgrps()
+    Call tests.set_input_isah(wsName:="TESTMULTIFILL_ISAH_WK46_LNXX")
+End Sub
+
+Sub test_set_new_capgrps()
+   'new worksheets
+   w.delete_worksheet "LN22"
+   w.delete_worksheet "LN24"
+   w.delete_worksheet "LN26"
+   tests.set_input_isah_to_wk46_new_capgrps
+   main.btn_add_capgrp_sheets_Click
+   Debug.Assert w.sheet_exists("LN22") And w.sheet_exists("LN24") And w.sheet_exists("LN26")
+   
+   ' clear ws
+   w.delete_worksheet "LN22"
+   w.delete_worksheet "LN24"
+   w.delete_worksheet "LN26"
 End Sub
 
 Sub test()
@@ -187,8 +210,6 @@ Sub test_ln1_updated()
     Set ws = wb.Sheets(capgrp)
     Debug.Print r.get_last_row("A14", ws)
 End Sub
-
-
 
 Sub test_btn_import_bulk()
     main.btn_import_bulk_Click
@@ -377,26 +398,6 @@ nx_capgrp:
     Next
 End Sub
 
-
-
-Sub test_()
-Dim wb0 As Workbook, rng As Range, rng1 As Range, capgrp_sheet As String, numCols As Long, numRows As Long
-capgrp_sheet = "INPAK"
-Set ws = Worksheets(capgrp_sheet)
-ws.Activate
-ws.Range("A15").Activate
-
-values = main.get_orders_range(capgrp_sheet).Value2
-Set rng = main.get_orders_range(capgrp_sheet)
-
-main.btn_add_record_Click
-numCols = a.num_array_columns(values)
-numRows = a.num_array_rows(values)
-Set rng1 = r.getResizedRange(rng, num_rows:=numRows, num_cols:=numCols)
-Debug.Print rng.address, rng1.address
-
-
-End Sub
 
 ' This subroutine stores the current state of the active worksheet, executes a given subroutine,
 ' restores the previous state, and compares the current state with the stored state.
