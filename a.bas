@@ -17,13 +17,14 @@
 'array_length(arr) => Gets length of array (1D or 2D)
 'printArrayRowsColumns(arr, array_name) => Prints array dimensions
 'printArrayBounds(arr, array_name) => Prints array bounds
-'num_array_rows(arr) => Returns number of rows in array
+'numArrayRows(arr) => Returns number of rows in array
 'num_array_columns(arr) => Returns number of columns in array
 
 ' 2. array transformation
 'ConvertTo1DArray(arr) => Converts 2D array to 1D array
 'convertTo2DArray(arr, axis) => Converts 1D array to 2D array
 'to_array(x) => Converts collection or value to array
+'toVector(arr)
 'create_vector(num_rows, default_value, start_index, header_value, as_2darray) => Creates a vector with optional header
 'create_integer_vector(start, endVal) => Creates integer vector from start to end
 'create_array(num_rows, num_cols, default_value) => Creates 2D array with default values
@@ -84,11 +85,11 @@ Sub test_array_functions()
     vec0 = a.create_vector(10, 1, header_value:="some_number", as_2darray:=False)
     vec1 = a.create_vector(10, "A", header_value:="some_string", as_2darray:=True)
     Debug.Assert a.is_1d_array(vec0) And a.array_length(vec0) = 10
-    Debug.Assert a.is_2d_array(vec1) And a.num_array_rows(vec1) = 10
+    Debug.Assert a.is_2d_array(vec1) And a.numArrayRows(vec1) = 10
     
     'test empty array
     Dim empty_array As Variant
-    Debug.Assert a.num_array_rows(empty_array) = -1
+    Debug.Assert a.numArrayRows(empty_array) = -1
     Debug.Assert a.ArrayIsEmpty(empty_array) And a.ArrayIsEmpty(matrix) And Not a.ArrayIsEmpty(vec0)
     
     ReDim matrix(2, 2)
@@ -100,7 +101,7 @@ Sub test_array_functions()
     
     'test: create matrix (array multiple columns), check number of columns
     arr0 = a.AppendColumn(vec1, vec0)
-    Debug.Assert a.num_array_rows(arr0) = 10 And a.num_array_columns(arr0) = 2
+    Debug.Assert a.numArrayRows(arr0) = 10 And a.num_array_columns(arr0) = 2
     header_row = a.get_array_row(arr0, 1)
     Debug.Assert header_row(1, 1) = "some_string" And header_row(1, 2) = "some_number"
     
@@ -118,6 +119,8 @@ Sub test_array_functions()
     arr2D = FillArray(arr2D, "X")
     
     Debug.Assert is_2d_array(arr2D) And array_contains(arr2D, "X") And Not array_contains(arr2D, 1)
+    arrayColumn = a.get_array_column(arr2D, 1)
+    Debug.Assert is_1d_array(toVector(arrayColumn)) And a.ArraysAreEqual(arr1D, toVector(arr1D))
     
     ' Test with an empty array
     Dim emptyArray As Variant
@@ -140,11 +143,11 @@ Sub test_array_functions()
     
     '4. subset rows, columns and count rows/columns and resize_rows
     arr1 = a.resize_array(arr0, 2) 'without header
-    Debug.Assert a.num_array_columns(arr1) = 2 And a.num_array_rows(arr1) = 9
+    Debug.Assert a.num_array_columns(arr1) = 2 And a.numArrayRows(arr1) = 9
     arr_subset_cols = a.subset_columns(arr0, 2, 2)
-    Debug.Assert a.num_array_columns(arr_subset_cols) = 1 And a.num_array_rows(arr_subset_cols) = 10
+    Debug.Assert a.num_array_columns(arr_subset_cols) = 1 And a.numArrayRows(arr_subset_cols) = 10
     arr_subset_rows = a.subset_rows(arr0, 1, 5)
-    Debug.Assert a.num_array_columns(arr_subset_rows) = 2 And a.num_array_rows(arr_subset_rows) = 5
+    Debug.Assert a.num_array_columns(arr_subset_rows) = 2 And a.numArrayRows(arr_subset_rows) = 5
     
     Debug.Print getRowIndexes(Array()).count = 0
     
@@ -152,7 +155,7 @@ Sub test_array_functions()
     row1 = a.convertTo2DArray(Array("B", 2), axis:=1)
     arr3 = a.concatArrays(arr0, row1)
     'a.PasteArray arr3, "A1", ws0
-    Debug.Assert a.num_array_columns(arr3) = 2 And a.num_array_rows(arr3) = 10 + 1
+    Debug.Assert a.num_array_columns(arr3) = 2 And a.numArrayRows(arr3) = 10 + 1
     a.printArray arr3
     Debug.Assert a.FindArrayIndex(arr3, "some_number", axis:=1) = 2 And a.FindArrayRowIndex(arr3, "some_number", 2)
     
@@ -164,7 +167,7 @@ Sub test_array_functions()
     ' append arr0, arr1
     arr2 = a.concatArrays(arr0, arr1)
     Debug.Print a.num_array_columns(arr0), a.num_array_columns(arr1), a.num_array_columns(arr2)
-    Debug.Assert a.num_array_columns(arr2) = 2 And a.num_array_rows(arr2) = 19
+    Debug.Assert a.num_array_columns(arr2) = 2 And a.numArrayRows(arr2) = 19
     a.pasteArray arr2, "A1", ws0
     
     arrAppendColumn = a.AppendColumn(arr2, 2, header_value:="new_column")
@@ -184,7 +187,7 @@ Sub test_array_functions()
     a.printArray headerArr
     a.printArrayRowsColumns headerArr
     arrayFiltered1 = a.QueryArray(testdataArray, "Qty1", 95, "Ordernummer", "228978")
-    Debug.Assert a.num_array_rows(arrayFiltered1) = 4
+    Debug.Assert a.numArrayRows(arrayFiltered1) = 4
     
     ' 4.2 array filtering
     ' test RemoveNullsFromArray
@@ -195,7 +198,7 @@ Sub test_array_functions()
     testdataArrayNulls(2, 1) = ""
     testdataArrayNulls(10, 5) = Empty
     testdataArrayNotNull = a.RemoveNullsFromArray(testdataArrayNulls, "Aantal", "Artikel", "Qty1")
-    Debug.Print a.num_array_rows(testdataArray) - a.num_array_rows(testdataArrayNotNull) = 2
+    Debug.Print a.numArrayRows(testdataArray) - a.numArrayRows(testdataArrayNotNull) = 2
     
     ' test getNamedArrayValue
     arrayFiltered2 = a.QueryArray(arrayFiltered1, "Artikel", "000900853/02")
@@ -204,14 +207,14 @@ Sub test_array_functions()
     
     columnArray = Worksheets("test").Range("A1:A20").value
     a.printArray RemoveNullsFromArray(columnArray), True
-    Debug.Print a.num_array_rows(RemoveNullsFromArray(columnArray))
-    Debug.Assert a.num_array_rows(RemoveNullsFromArray(columnArray, 1)) = 19
+    Debug.Print a.numArrayRows(RemoveNullsFromArray(columnArray))
+    Debug.Assert a.numArrayRows(RemoveNullsFromArray(columnArray, 1)) = 19
     
-    Debug.Assert a.num_array_rows(a.RemoveNullsFromVector(Array("1", 1, ""))) = 2
+    Debug.Assert a.numArrayRows(a.RemoveNullsFromVector(Array("1", 1, ""))) = 2
     
     mat1 = concatArrays(Array("X", 5550, "5550"), Array("X", "Y", "Z"), axis:=1)
     a.printArrayAsString mat1
-    Debug.Assert a.num_array_rows(mat1) = 2 And a.num_array_rows(FilterArrayOnPattern(mat1, "^[\d]", 2)) = 1
+    Debug.Assert a.numArrayRows(mat1) = 2 And a.numArrayRows(FilterArrayOnPattern(mat1, "^[\d]", 2)) = 1
     
     
 
@@ -467,6 +470,50 @@ Function to_array(x As Variant) As Variant()
     End If
 End Function
 
+Function toVector(arr As Variant) As Variant
+    ' This function converts a 2D array with a single row or column to a 1D array.
+    ' If the input is already a 1D array, it returns the input as is.
+    ' Raises an error if the input is a 2D array with more than one row and column.
+    '
+    ' Parameters:
+    ' arr : The input array to be converted.
+    '
+    ' Returns:
+    ' A 1D array.
+    
+    Dim result() As Variant
+    Dim i As Long
+    
+    ' Check if the input is a 1D array
+    If is_1d_array(arr) Then
+        toVector = arr
+        Exit Function
+    End If
+    
+    ' Check if the input is a 2D array with a single column
+    If is_2d_array(arr) And num_array_columns(arr) = 1 Then
+        ReDim result(1 To numArrayRows(arr))
+        For i = LBound(arr, 1) To UBound(arr, 1)
+            result(i) = arr(i, 1)
+        Next i
+        toVector = result
+        Exit Function
+    End If
+    
+    ' Check if the input is a 2D array with a single row
+    If is_2d_array(arr) And numArrayRows(arr) = 1 Then
+        ReDim result(1 To num_array_columns(arr))
+        For i = LBound(arr, 2) To UBound(arr, 2)
+            result(i) = arr(1, i)
+        Next i
+        toVector = result
+        Exit Function
+    End If
+    
+    ' Raise an error if the input is a 2D array with more than one row and column
+    Err.Raise 1001, "toVector", "Input array must be 1D or 2D with a single row or column"
+End Function
+
 Function toString(arr As Variant, Optional columnSeparator As String = ";", Optional rowSeparator As String = vbCrLf) As String
     ' This function converts a 1D or 2D array to a string representation.
     ' The elements in each row are separated by columnSeparator, and rows are separated by rowSeparator.
@@ -618,19 +665,6 @@ Function FillArray(arr As Variant, value As Variant) As Variant
     FillArray = arr
 End Function
 
-Function num_array_rows(arr As Variant) As Integer
-    If IsArray(arr) Then
-        If is_2d_array(arr) Then
-           num_array_rows = UBound(arr, 1) - LBound(arr, 1) + 1
-        Else
-           num_array_rows = 1 ' convention
-        End If
-    Else
-        num_array_rows = -1
-    End If
-End Function
-
-' better name
 Function numArrayRows(arr As Variant) As Integer
     If IsArray(arr) Then
         If is_2d_array(arr) Then
@@ -673,9 +707,9 @@ End Function
 ' 3 utility
 Sub printArrayRowsColumns(arr As Variant, Optional array_name As String = "")
     If array_name <> "" Then
-    Debug.Print "array " & array_name & " has num rows:", a.num_array_rows(arr), "num columns:", a.num_array_columns(arr)
+    Debug.Print "array " & array_name & " has num rows:", a.numArrayRows(arr), "num columns:", a.num_array_columns(arr)
     Else
-    Debug.Print "num rows:", a.num_array_rows(arr), "num columns:", a.num_array_columns(arr)
+    Debug.Print "num rows:", a.numArrayRows(arr), "num columns:", a.num_array_columns(arr)
     End If
 End Sub
 
@@ -783,7 +817,7 @@ Function ArraysAreEqual(arr0 As Variant, arr1 As Variant, Optional print0 As Boo
     ' Check if both arrays are either 1D or 2D
     If (a.is_1d_array(arr0) And a.is_1d_array(arr1)) Or (a.is_2d_array(arr0) And a.is_2d_array(arr1)) Then
         ' Check if arrays have the same number of rows and columns
-        If a.num_array_rows(arr0) <> a.num_array_rows(arr1) Or a.num_array_columns(arr0) <> a.num_array_columns(arr1) Then
+        If a.numArrayRows(arr0) <> a.numArrayRows(arr1) Or a.num_array_columns(arr0) <> a.num_array_columns(arr1) Then
             ArraysAreEqual = False
             GoTo print_mismatch
         End If
@@ -947,7 +981,7 @@ Function get_array_column(arr, i, Optional row_offset = 0) As Variant
     Dim resultArr() As Variant
     Dim row As Long
     
-    numRows = a.num_array_rows(arr)
+    numRows = a.numArrayRows(arr)
     numCols = a.num_array_columns(arr)
     
     ' Check if i is out of bounds
@@ -977,7 +1011,7 @@ Function get_array_row(arr As Variant, j As Long) As Variant
     Dim resultArr() As Variant
     Dim cl0 As Long
     
-    numRows = a.num_array_rows(arr)
+    numRows = a.numArrayRows(arr)
     numCols = a.num_array_columns(arr)
     
     ' Check if j is out of bounds
@@ -1307,7 +1341,7 @@ Function getArrayColumnIndex(arr As Variant, column_name) As Long
         Exit Function
     End If
     
-    If a.num_array_rows(arr) < 1 Then
+    If a.numArrayRows(arr) < 1 Then
        Err.Raise 1002, "getArrayColumnIndex", "arr has no records"
     End If
     
@@ -1424,7 +1458,7 @@ Function RemoveNullsFromArray(arr As Variant, ParamArray filterColumns() As Vari
     Dim filteredArr As Variant
     
     ' Initialize the filteredArr as header
-    If a.num_array_rows(arr) < 2 Then
+    If a.numArrayRows(arr) < 2 Then
        Debug.Print "RemoveNullsFromArray: arr has no records"
        RemoveNullsFromArray = arr
     End If
@@ -1470,8 +1504,75 @@ End Function
 
 Sub test()
 Dim filteredArr As Variant
-Debug.Print a.num_array_rows(filteredArr)
+Debug.Print a.numArrayRows(filteredArr)
 End Sub
+
+Function FilterVectorWithPattern(vec As Variant, pattern As String, Optional anti As Boolean = False) As Variant
+    ' This function filters a 1D array (vector) based on a regular expression pattern.
+    ' It returns elements that match the pattern, or if anti is True, elements that do not match the pattern.
+    '
+    ' Parameters:
+    ' vec     : The 1D array (vector) to be filtered.
+    ' pattern : The regular expression pattern to match.
+    ' anti    : If True, return elements that do not match the pattern (default is False).
+    '
+    ' Returns:
+    ' A 1D array containing the filtered elements.
+    
+    Dim i As Long
+    Dim includeElement As Boolean
+    Dim currentElement As Variant
+    Dim filteredVec As collection
+    Dim regex As Object
+    
+    ' Check if vec is a 1D array
+    If Not is_1d_array(vec) Then
+        Err.Raise 1001, "FilterVectorWithPattern", "Input must be a 1-dimensional array"
+    End If
+    
+    ' Create a regular expression object
+    Set regex = CreateObject("VBScript.RegExp")
+    regex.pattern = pattern
+    regex.IgnoreCase = True
+    regex.Global = True
+    
+    ' Initialize the collection to store filtered elements
+    Set filteredVec = New collection
+    
+    ' Loop through each element of the vector
+    For i = LBound(vec) To UBound(vec)
+        ' Get the current element as a string
+        currentElement = CStr(vec(i))
+        
+        ' Check if the current element matches the pattern
+        If regex.test(currentElement) Then
+            includeElement = Not anti
+        Else
+            includeElement = anti
+        End If
+        
+        ' If the element should be included, add it to the collection
+        If includeElement Then
+            filteredVec.Add currentElement
+        End If
+    Next i
+    
+    ' Convert the collection to a 1D array
+    Dim result() As Variant
+    If filteredVec.count > 0 Then
+        ReDim result(1 To filteredVec.count)
+        For i = 1 To filteredVec.count
+            result(i) = filteredVec(i)
+        Next i
+    Else
+        ' Return an empty array if no elements match
+        result = Array()
+    End If
+    
+    ' Return the filtered vector
+    FilterVectorWithPattern = result
+End Function
+
 Function FilterArrayOnPattern(arr As Variant, pattern As String, ParamArray filterColumns() As Variant) As Variant
     ' This function filters out rows from a 2D array where specified columns match a given regular expression pattern.
     ' arr - The 2D array to be filtered.
@@ -1556,7 +1657,7 @@ Function getNamedArrayValue(arr As Variant, columnname As String) As Variant
     End If
     
     ' Get the number of rows in the array
-    numRows = num_array_rows(arr)
+    numRows = numArrayRows(arr)
     
     ' Raise an error if the array does not have exactly two rows: header + values
     If numRows < 2 Then
