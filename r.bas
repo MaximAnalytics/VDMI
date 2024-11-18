@@ -93,7 +93,7 @@ Global Const FILTER_COLUMN_NAME = "Cap.Grp"
 
 'tests
 Sub test_range_functions()
-   Dim n As name, rng0 As Range, ws0 As Worksheet, wb0 As Workbook, wstest As Worksheet, rng1 As Range, named_range_name As String, formulaTemplate As String
+   Dim N As name, rng0 As Range, ws0 As Worksheet, wb0 As Workbook, wstest As Worksheet, rng1 As Range, named_range_name As String, formulaTemplate As String
    Dim numRows As Long, numCols As Long
    Set wb0 = ThisWorkbook
    Set wstest = w.get_or_create_worksheet("test", wb0, True)
@@ -105,12 +105,12 @@ Sub test_range_functions()
     'filter on single value
     filter_values = Array("LN 1")
     filtered_array = r.filter_range(rng0, r.FILTER_COLUMN_NAME, filter_values, remove_filter:=True, xl_operator:=xlFilterValues)
-    Debug.Assert a.num_array_rows(filtered_array) > 1
+    Debug.Assert a.numArrayRows(filtered_array) > 1
     
     'filter on multiple values
     filter_values = Array("LN 1", "HCM", "U800")
     filtered_array = r.filter_range(rng0, r.FILTER_COLUMN_NAME, filter_values, remove_filter:=False, xl_operator:=xlFilterValues)
-    Debug.Assert a.num_array_rows(filtered_array) > 1
+    Debug.Assert a.numArrayRows(filtered_array) > 1
     
     'named ranges
     Dim Column1 As Range, Column2 As Range
@@ -559,7 +559,7 @@ Sub updateNamedRangeWithValues(named_range_name As String, values As Variant, Op
     
     ' Resize the named range to match the dimensions of the values array
     numCols = a.num_array_columns(values)
-    numRows = a.num_array_rows(values)
+    numRows = a.numArrayRows(values)
     
     Set rng = r.getResizedRange(rng, num_rows:=numRows, num_cols:=numCols)
     Debug.Print "updateNamedRangeWithValues: resized range is " & rng.address
@@ -644,16 +644,6 @@ Function get_range(rng As Variant, Optional ws As Variant, Optional wb As Varian
     Dim rng0 As Range, ws0 As Worksheet, wb0 As Workbook
     
     ' Set default worksheet and workbook
-    If IsMissing(ws) Then
-        Set ws0 = ActiveSheet
-    ElseIf IsEmpty(ws) Then
-        Set ws0 = ActiveSheet
-    ElseIf ws Is Nothing Then
-        Set ws0 = ActiveSheet
-    Else
-        Set ws0 = ws
-    End If
-    
     If IsMissing(wb) Then
         Set wb0 = ActiveWorkbook
     ElseIf IsEmpty(ws) Then
@@ -662,6 +652,18 @@ Function get_range(rng As Variant, Optional ws As Variant, Optional wb As Varian
        Set wb0 = ActiveWorkbook
     Else
        Set wb0 = wb
+    End If
+    
+    If IsMissing(ws) Then
+        Set ws0 = ActiveSheet
+    ElseIf VarType(ws) = vbString Then
+        Set ws0 = wb0.Sheets(ws)
+    ElseIf IsEmpty(ws) Then
+        Set ws0 = ActiveSheet
+    ElseIf ws Is Nothing Then
+        Set ws0 = ActiveSheet
+    Else
+        Set ws0 = ws
     End If
     
     ' Convert rng to range object
@@ -1091,7 +1093,6 @@ Public Function get_default_wb(Optional wb As Variant) As Workbook
     Set get_default_wb = wb0
 End Function
 
-
 Function name_exist(name As String, Optional ws As Worksheet, Optional wb As Workbook) As Boolean
     Dim ws0 As Worksheet, wb0 As Workbook
     
@@ -1112,6 +1113,29 @@ Function name_exist(name As String, Optional ws As Worksheet, Optional wb As Wor
     End If
     On Error GoTo 0
 End Function
+
+Sub cleanNamesWithReferenceError(Optional wb As Workbook)
+    ' This procedure deletes all named ranges in the specified workbook that have a #REF! error.
+    ' If no workbook is specified, it defaults to the active workbook.
+    '
+    ' Parameters:
+    ' wb - (Optional) The workbook in which to clean named ranges. Defaults to the active workbook.
+    
+    Dim nm As name
+    Dim wb0 As Workbook
+    
+    ' Set the workbook to the specified workbook or the active workbook if not specified
+    Set wb0 = r.get_default_wb(wb)
+    
+    ' Loop through each name in the workbook
+    For Each nm In wb0.Names
+        ' Check if the name refers to a range with a #REF! error
+        If InStr(1, nm.RefersTo, "#REF!") > 0 Then
+            ' Delete the name if it has a #REF! error
+            nm.Delete
+        End If
+    Next nm
+End Sub
 
 ' Addresses
 Function get_range_address(ws0 As Worksheet, Optional r0 = 1, Optional r1 = 1, Optional c0 = 1, Optional c1 = 1) As String
@@ -1358,7 +1382,9 @@ Function get_unique_vals(rng) As Variant
     
     ' Loop through the array and add unique values to the dictionary
     If rng Is Nothing Then
-        Err.Raise 1001, , "range is nothing"
+        'Err.Raise 1001, , "range is nothing"
+        get_unique_vals = Array()
+        Exit Function
     End If
     
     arr = rng_to_1d_array(rng)
