@@ -26,6 +26,10 @@
 '`create_empty_workbook(new_workbook_name, path)` => Creates a new empty workbook with a single sheet, saving it to the specified path.
 '`test_create_empty_workbook()` => Tests the creation of an empty workbook with a default name and saves it to the current directory.
 
+' 7 formatting
+' formatWorksheetColumns
+
+
 Sub test_w_functions()
     Dim wbname As String
 
@@ -68,19 +72,54 @@ Function get_or_create_worksheet(wsName As String, wb As Workbook, Optional over
 End Function
 
 Sub delete_worksheet(wsName, Optional wb As Workbook)
-Dim ws As Worksheet
-Set wb = r.get_default_wb(wb)
-current_wsname = ActiveSheet.name
-On Error Resume Next
-    Set ws = wb.Worksheets(wsName)
-    Application.DisplayAlerts = False
-    ws.Delete
-    Application.DisplayAlerts = True
-On Error GoTo 0
-' return to the active sheet if this is not the deleted sheet
-If current_wsname <> wsName Then
-    wb.Sheets(current_wsname).Activate
-End If
+    Dim ws As Worksheet
+    Set wb = r.get_default_wb(wb)
+    current_wsname = ActiveSheet.name
+    On Error Resume Next
+        Set ws = wb.Worksheets(wsName)
+        Application.DisplayAlerts = False
+        ws.Delete
+        Application.DisplayAlerts = True
+    On Error GoTo 0
+    ' return to the active sheet if this is not the deleted sheet
+    If current_wsname <> wsName Then
+        wb.Sheets(current_wsname).Activate
+    End If
+End Sub
+
+' This subroutine deletes multiple worksheets from the active workbook.
+' It takes a ParamArray of worksheet names to be deleted.
+Sub deleteWorksheets(ParamArray worksheetNames() As Variant)
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim wsName As Variant
+    Dim current_wsname As String
+    
+    'Set the workbook to ThisWorkbook
+    Set wb = ThisWorkbook
+    
+    ' Store the name of the currently active sheet
+    current_wsname = ActiveSheet.name
+    
+    ' Loop through each worksheet name provided in the ParamArray
+    For Each wsName In worksheetNames
+        On Error Resume Next
+        ' Attempt to set the worksheet object
+        Set ws = wb.Worksheets(wsName)
+        
+        ' If the worksheet exists, delete it
+        If Not ws Is Nothing Then
+            Application.DisplayAlerts = False
+            ws.Delete
+            Application.DisplayAlerts = True
+        End If
+        On Error GoTo 0
+    Next wsName
+    
+    ' Return to the active sheet if it was not one of the deleted sheets
+    If w.sheet_exists(current_wsname) Then
+        wb.Sheets(current_wsname).Activate
+    End If
 End Sub
 
 Function copy_ws(wsName As String, Optional new_wsname As String, Optional overwrite As Boolean = False) As Worksheet
@@ -246,7 +285,7 @@ Sub createMacroEnabledTemplate(template_name As String, path As String, Optional
     Set newWorkbook = Workbooks.Add
     
     ' Save the new workbook as a macro-enabled template
-    newWorkbook.SaveAs Filename:=templateFullPath, FileFormat:=xlOpenXMLTemplateMacroEnabled
+    newWorkbook.SaveAs fileName:=templateFullPath, FileFormat:=xlOpenXMLTemplateMacroEnabled
     
     ' Check if the new workbook should be closed
     If closeNewWorkbook Then
@@ -369,11 +408,11 @@ Function subset_columns(ws As Worksheet, column_indexes As Variant) As Range
     Set subset_columns = result_range
 End Function
 
-Sub freeze_top_rows(ws As Worksheet, n As Integer)
+Sub freeze_top_rows(ws As Worksheet, N As Integer)
     ws.Activate
     With ActiveWindow
         If .FreezePanes Then .FreezePanes = False
-        .SplitRow = n
+        .SplitRow = N
         .FreezePanes = True
     End With
 End Sub
@@ -417,9 +456,9 @@ Sub create_empty_workbook(new_workbook_name As String, path As String)
     ws1.name = "Sheet1"
     
     ' Remove all named ranges
-    Dim n As name
-    For Each n In ThisWorkbook.Names
-        r.delete_named_range n.name, ws, ThisWorkbook, False
+    Dim N As name
+    For Each N In ThisWorkbook.Names
+        r.delete_named_range N.name, ws, ThisWorkbook, False
     Next
     
     ' Break all links to external sources
@@ -457,4 +496,50 @@ Sub test_create_empty_workbook()
 End Sub
 
 
+'7 formatting
+Sub formatWorksheetColumns(ws As Worksheet, column_format_mapping As Variant, Optional ky_delim As String = "=", Optional it_delim As String = ";")
+    ' Define variables
+    Dim mapping As Scripting.Dictionary
+    Dim colName As Variant
+    Dim colFormat As Variant
+    Dim colIndex As Long
+    Dim headerRow As Range
+    Dim lastCol As Long
+    Dim i As Long
+
+    ' Get the last column of the worksheet
+    lastCol = ws.Cells(1, ws.columns.count).End(xlToLeft).column
+
+    ' Get the header row
+    Set headerRow = ws.Range(ws.Cells(1, 1), ws.Cells(1, lastCol))
+
+    ' Get the mapping from column_format_mapping
+    If TypeName(column_format_mapping) = "String" Then
+        ' Convert string to dictionary
+        Set mapping = dict.getDictionaryFromString(CStr(column_format_mapping), ky_delim, it_delim)
+    ElseIf TypeName(column_format_mapping) = "Dictionary" Then
+        ' Use the provided dictionary
+        Set mapping = column_format_mapping
+    Else
+        ' Raise an error if column_format_mapping is not a string or dictionary
+        Err.Raise 1001, "formatWorksheetColumns", "column_format_mapping must be a string or dictionary"
+    End If
+
+    ' Loop over keys in mapping
+    For Each colName In mapping.Keys
+        colFormat = mapping(colName)
+
+        ' Find the associated column index
+        colIndex = Application.match(colName, headerRow, 0)
+
+        ' Check if the column index is valid
+        If Not IsError(colIndex) Then
+            ' Set the column format
+            ws.columns(colIndex).NumberFormat = colFormat
+        Else
+            ' Raise an error if the column name is not found
+            Err.Raise 1002, "formatWorksheetColumns", "Column name not found: " & colName
+        End If
+    Next colName
+End Sub
 
