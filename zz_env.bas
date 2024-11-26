@@ -26,6 +26,10 @@ Sub update_vb_codemodule_code()
     fs.updateCodeModules VDMI_MODULES_TO_IMPORT, getVDMIGithub()
 End Sub
 
+Sub import_codemodule()
+    fs.updateCodeModule "wsfunctions.bas", getVDMIGithub()
+End Sub
+
 ' import-update modules from passed list
 Sub update_vb_specific_modules(code_modules_to_update As String)
     For Each modfile In clls.toCollection(code_modules_to_update, ";")
@@ -56,6 +60,17 @@ End Function
 Function getWorkPath() As String
     getWorkPath = fs.getFirstValidPath(WORKPATH)
 End Function
+
+' Function to get the Documents path for Windows OS
+Function getDocumentsPath() As String
+    ' This function retrieves the path to the user's Documents folder on a Windows OS.
+    ' It uses the Windows Script Host Shell object to access the special folder path.
+    Dim objShell As Object
+    Set objShell = CreateObject("WScript.Shell")
+    getDocumentsPath = objShell.SpecialFolders("MyDocuments")
+    Set objShell = Nothing
+End Function
+
 
 ' Excel templates, testdata
 Function getExcelTemplatePath() As String
