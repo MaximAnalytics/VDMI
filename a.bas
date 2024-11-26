@@ -216,7 +216,7 @@ Sub test_array_functions()
     mat1 = concatArrays(Array("X", 5550, "5550"), Array("X", "Y", "Z"), axis:=1)
     a.printArrayAsString mat1
     Debug.Assert a.numArrayRows(mat1) = 2 And a.numArrayRows(FilterArrayOnPattern(mat1, "^[\d]", 2)) = 1
-    
+        
     '5 concat, combine, crossjoin
     Dim test_arr As Variant
     Dim test_vector As Variant
