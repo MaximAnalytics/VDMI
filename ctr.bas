@@ -33,7 +33,6 @@ Sub add_button(btn_name As String, Optional addr As String = "$A$1", Optional h 
     'Create the button and set its properties
     Dim left As Long
     left = ws0.Range(addr).left + left_offset
-    Debug.Print "button left " & left
     Set btn = ws0.Buttons.Add(left:=left, Top:=ws0.Range(addr).Top, Width:=w, Height:=h)
     btn.name = btn_name
     btn.Text = label
@@ -49,8 +48,38 @@ Sub add_button(btn_name As String, Optional addr As String = "$A$1", Optional h 
             .InsertLines .CountOfLines + 1, code
         End With
     End If
-    
 End Sub
+
+Function getButton(btn_name, ws) As Shape
+    Dim btn As Button, shp As Shape
+    On Error GoTo nx
+    For Each shp In ws.Shapes
+            If shp.Type = 8 Then
+            'Debug.Print shp.name, btn_name, shp.name = btn_name
+            If shp.name = btn_name Then
+               Set getButton = shp
+               GoTo exit_function
+            End If
+            End If
+nx:
+    Next shp
+    On Error GoTo 0
+    Err.Raise 1001, "getButton", "button doesnt exist"
+exit_function:
+End Function
+
+Sub positionButton(btn_name As String, Optional addr As String = "$A$1", Optional ws As Worksheet, Optional left_offset = 0)
+   Dim left0 As Long, top0 As Long, btn As Shape
+   Set ws = r.get_default_ws(ws)
+   Set btn = getButton(btn_name, ws)
+   left0 = ws.Range(addr).left + left_offset
+   top0 = ws.Range(addr).Top
+   With btn
+    .left = left0
+    .Top = top0
+   End With
+End Sub
+
 
 Function remove_button(btn_name As String, Optional ws As Worksheet, Optional wb As Workbook)
     Dim ws0 As Worksheet, wb0 As Workbook
