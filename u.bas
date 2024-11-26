@@ -36,6 +36,14 @@ Sub test_utilities()
     Debug.Assert mask(True, 123) = 123
     Debug.Assert mask(False, 123) = Empty
     
+    ' Test cases for the InList function
+    Debug.Assert InList("A", "A;B") = True
+    Debug.Assert InList("A", "AS;B") = False
+    Debug.Assert InList("A", Array("A", "B")) = True
+    Debug.Assert InList("A", Array("AA", "B")) = False
+    Debug.Assert InList("A", clls.toCollection("A", "B")) = True
+    Debug.Assert InList("A", clls.toCollection("AA", "B")) = False
+    
     ' Test Object attribute functions
     Dim ws0 As Worksheet, rng0 As Range
     Set ws0 = w.get_or_create_worksheet("test_ranges", ThisWorkbook)
@@ -143,6 +151,61 @@ Function mask(b As Boolean, x As Variant) As Variant
     Else
         mask = Empty
     End If
+End Function
+
+' Function: InList
+' This function checks if a given value is present in a list, which can be a string, collection, range, or array.
+' Parameters:
+'   - value: The value to search for in the list.
+'   - list: The list to search within, which can be a string, collection, range, or array.
+'   - sep: (Optional) The separator to use if the list is a string. Default is ";".
+'
+' Returns:
+'   - True if the value is found in the list, False otherwise.
+Function InList(value As Variant, list As Variant, Optional sep As String = ";") As Boolean
+    Dim arr As Variant
+    Dim col As collection
+    Dim item As Variant
+    Dim i As Long
+    
+    ' Determine the type of the list and convert it to a 1D array or collection
+    Select Case TypeName(list)
+        Case "String"
+            ' Split the string into an array using the separator
+            arr = Split(list, sep)
+        Case "Collection"
+            ' Convert the collection to an array
+            Set col = list
+            ReDim arr(1 To col.count)
+            For i = 1 To col.count
+                arr(i) = col(i)
+            Next i
+        Case "Range"
+            ' Convert the range to a 1D array
+            arr = Application.Transpose(list.value)
+        Case "Double"
+            arr = Array(list)
+        Case "Integer"
+            arr = Array(list)
+        Case "Float"
+            arr = Array(list)
+        Case Else
+            If IsArray(list) Then
+                If a.is_2d_array(list) Then
+                    ' Convert 2D array to 1D array
+                    arr = a.ConvertTo1DArray(list)
+                Else
+                    ' Use the 1D array as is
+                    arr = list
+                End If
+            Else
+                ' Raise an error if the list is not a valid type
+                Err.Raise vbObjectError + 1, "InList", "Invalid list type: " & TypeName(list)
+            End If
+    End Select
+    
+    ' Check if the value is in the array
+    InList = a.ItemInArray(value, arr)
 End Function
 
 'Formulas
