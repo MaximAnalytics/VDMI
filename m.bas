@@ -1,20 +1,20 @@
 ' maths
-Function Round_to_Nearest_Fraction(n As Double, f As Double) As Double
+Function Round_to_Nearest_Fraction(N As Double, f As Double) As Double
     Dim roundedValue As Double
-    roundedValue = WorksheetFunction.Round(n / f, 0) * f
+    roundedValue = WorksheetFunction.Round(N / f, 0) * f
     Round_to_Nearest_Fraction = roundedValue
 End Function
 
-Function Round_Up_to_Nearest_Fraction(n As Double, f As Double) As Double
+Function Round_Up_to_Nearest_Fraction(N As Double, f As Double) As Double
     Dim roundedValue As Double
-    roundedValue = WorksheetFunction.Ceiling(n / f, 1) * f
+    roundedValue = WorksheetFunction.Ceiling(N / f, 1) * f
     Round_Up_to_Nearest_Fraction = roundedValue
 End Function
 
-Function round_up_to_nearest_quarter(n As Double) As Double
+Function round_up_to_nearest_quarter(N As Double) As Double
     Dim quarter_fraction As Double
     quarter_fraction = 1 / (24 * 4)
-    round_up_to_nearest_quarter = Round_Up_to_Nearest_Fraction(n, quarter_fraction)
+    round_up_to_nearest_quarter = Round_Up_to_Nearest_Fraction(N, quarter_fraction)
 End Function
 
 Function gte_dbl(x As Double, y As Double) As Boolean
@@ -25,8 +25,8 @@ Function lte_dbl(x As Double, y As Double) As Boolean
   lte_dbl = Round(x, 10) <= Round(y, 10)
 End Function
 
-Function IsEven(n As Integer) As Boolean
-    If n Mod 2 = 0 Then
+Function IsEven(N As Integer) As Boolean
+    If N Mod 2 = 0 Then
         IsEven = True
     Else
         IsEven = False

@@ -6,7 +6,7 @@ Sub save_chart_as_pdf(chrt_name As String, pdf_file_name As String, ws As Worksh
     'Or: Set chart = ActiveSheet.ChartObjects(1).Chart
     
     'Export the chart as a PDF file
-    chart.ExportAsFixedFormat Type:=xlTypePDF, Filename:=pdf_file_name
+    chart.ExportAsFixedFormat Type:=xlTypePDF, fileName:=pdf_file_name
     
     'Display a message box indicating that the PDF file has been saved
     MsgBox "The chart has been saved as a PDF file: " & pdf_file_name, vbInformation, "Export Chart"

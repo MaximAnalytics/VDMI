@@ -453,16 +453,16 @@ End Function
 Function CollectionToArray(col As collection) As Variant
     Dim arr() As Variant
     Dim i As Long
-    Dim n As Long
+    Dim N As Long
     
     ' Get the number of items in the collection
-    n = col.count
+    N = col.count
     
     ' Dimension the array as (1 to n, 1 to 1)
-    ReDim arr(1 To n, 1 To 1)
+    ReDim arr(1 To N, 1 To 1)
     
     ' Populate the array with the collection items
-    For i = 1 To n
+    For i = 1 To N
         arr(i, 1) = col(i)
     Next i
     
