@@ -298,6 +298,11 @@ Function sort_collection(col As collection, Optional ascending As Boolean = True
     Dim sortedCol As New collection
     Dim item
     
+    If col.count < 1 Then
+       Set sort_collection = col
+       Exit Function
+    End If
+    
     ' Convert Collection to Array
     ReDim arr(1 To col.count)
     For i = 1 To col.count
@@ -549,4 +554,5 @@ Function ItemsToCollection(ParamArray items()) As collection
     ' Return the collection with all items added
     Set ItemsToCollection = result
 End Function
+
 
