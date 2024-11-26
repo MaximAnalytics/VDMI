@@ -60,7 +60,7 @@ Dim filePath As String, conn0 As ADODB.Connection, DataSourceString As String, C
     Set rs0 = db.queryDB(conn0, sql0)
     Debug.Assert RecordSetNumberRecords(rs0) = 317
     recordsArr = db.RecordSetToArray(rs0)
-    Debug.Assert a.num_array_columns(recordsArr) = 1 And a.num_array_rows(recordsArr) = 318 ' 317 plus header row
+    Debug.Assert a.num_array_columns(recordsArr) = 1 And a.numArrayRows(recordsArr) = 318 ' 317 plus header row
     
     ' query empty recordset
     sql0 = "SELECT DISTINCT BasicMat FROM [T_Part_BasicMat$] WHERE BasicMat<'0'"
@@ -254,7 +254,7 @@ Exit Function
 ErrHandler: Err.Raise 1001, "openExcelConn", errmsg0 & " " & errmsg1 & " " & Error(Err)
 End Function
 
-Public Sub executeSql(conn0 As ADODB.Connection, sql0 As String, Optional close_connection As Boolean = False)
+Public Sub executeSql(conn0 As ADODB.Connection, sql0 As String, Optional close_connection As Boolean = False, Optional dbg As Boolean = False)
     'parameter declaration
     Dim rs0 As ADODB.Recordset: Set rs0 = New ADODB.Recordset
     'On Error GoTo errhandler
@@ -268,7 +268,9 @@ Public Sub executeSql(conn0 As ADODB.Connection, sql0 As String, Optional close_
     
     'open send sql0 to connection conn0
     With rs0
-        Debug.Print "queryDB: querying " & sql0
+        If dbg Then
+           Debug.Print "queryDB: querying " & sql0
+        End If
         .Open sql0, conn0, adOpenStatic
     End With
     
@@ -282,16 +284,18 @@ Public Sub executeSql(conn0 As ADODB.Connection, sql0 As String, Optional close_
 'end procedure
 End Sub
 
-Public Sub executeSqlStatements(conn0 As ADODB.Connection, statements As String, linebr As String)
+Public Sub executeSqlStatements(conn0 As ADODB.Connection, statements As String, linebr As String, Optional dbg As Boolean = False, Optional on_error_close_connection = True)
     ' execute string of statements one-by-one
     Dim sql_statements As New collection
     Set sql_statements = str.stringToCol(statements, linebr)
     
     c = 0
     ' connection management: make sure to close connections on error
-    On Error GoTo close_connection
+    On Error GoTo handle_error
     For Each stat In sql_statements
-       Debug.Print stat
+       If dbg Then
+          Debug.Print stat
+       End If
        conn0.Execute CStr(stat)
        c = c + 1
     Next
@@ -299,8 +303,11 @@ Public Sub executeSqlStatements(conn0 As ADODB.Connection, statements As String,
 GoTo no_error
 
 'errorhandler
-close_connection:
-   conn0.Close
+handle_error:
+   If on_error_close_connection Then
+      conn0.Close
+   End If
+   Debug.Print str.subInStr("ERROR executing: `@1`", stat)
    Err.Raise Err
 no_error:
    Exit Sub
@@ -338,30 +345,53 @@ return_value:
     
 End Function
 
-Public Function sqlSetCondition(record As Recordset, set_columns As String, dbtype0 As dbType) As String
-'construct set statement
-
-'parameter declaration
-Dim fieldNames0 As collection
-Set fieldNames0 = str.stringToCol(set_columns, ";")
-
-'body
-str0 = "SET " & fieldNames0.item(1) & " = " & xlToDBvalue(record.Fields(fieldNames0.item(1)).value, dbtype0)
-If (fieldNames0.count > 1) = True Then
-    For i = 2 To fieldNames0.count
-        str0 = str0 & " , " & fieldNames0.item(i) & " = " & xlToDBvalue(record.Fields(fieldNames0.item(i)).value, dbtype0)
-    Next i
-End If
-
+Public Function sqlSetCondition(record As Recordset, set_columns As String, dbtype0 As dbType, Optional force_string As Boolean = False) As String
+    'construct set statement
+    
+    'parameter declaration
+    Dim fieldNames0 As collection
+    Set fieldNames0 = str.stringToCol(set_columns, ";")
+    
+    'body
+    str0 = "SET " & fieldNames0.item(1) & " = " & xlToDBvalue(record.Fields(fieldNames0.item(1)).value, dbtype0, force_string:=force_string)
+    If (fieldNames0.count > 1) = True Then
+        For i = 2 To fieldNames0.count
+            str0 = str0 & " , " & fieldNames0.item(i) & " = " & xlToDBvalue(record.Fields(fieldNames0.item(i)).value, dbtype0, force_string:=force_string)
+        Next i
+    End If
+    
 return_value:
-sqlSetCondition = str0
-
-'exit procedure
-Exit Function
+    sqlSetCondition = str0
+    
+    'exit procedure
+    Exit Function
 
 'end procedure
 End Function
 
+Public Function sqlMatchCondition(record As Recordset, columns As String, dbtype0 As dbType, Optional force_string As Boolean = False) As String
+    'construct set statement
+    
+    'parameter declaration
+    Dim fieldNames0 As collection
+    Set fieldNames0 = str.stringToCol(columns, ";")
+    
+    'body
+    str0 = fieldNames0.item(1) & " = " & xlToDBvalue(record.Fields(fieldNames0.item(1)).value, dbtype0, force_string:=force_string)
+    If (fieldNames0.count > 1) = True Then
+        For i = 2 To fieldNames0.count
+            str0 = str0 & " , " & fieldNames0.item(i) & " = " & xlToDBvalue(record.Fields(fieldNames0.item(i)).value, dbtype0, force_string:=force_string)
+        Next i
+    End If
+    
+return_value:
+    sqlMatchCondition = str0
+    
+    'exit procedure
+    Exit Function
+
+'end procedure
+End Function
 
 Public Function sqlWhereCondition(record As Recordset, where_columns As String, dbtype0 As dbType, Optional force_string As Boolean = False) As String
 'construct set statement
@@ -435,6 +465,94 @@ return_value:
     
 End Function
 
+Public Function sqlUpdateCaseStatement(rs0 As Recordset, table_name As String, set_columns As String, where_columns As String, dbtype0 As dbType, Optional force_string As Boolean = False) As String
+    ' Construct update statements using CASE WHEN for each record in RecordSet `rs0`
+    ' Batch recordset records in groups of N=10 records
+
+    Dim sql0 As String, sql1 As String, set_condition As String, where_condition As String
+    Dim c As Integer, i As Integer, N As Integer
+    Dim set_column_array() As String, where_column_array() As String
+    Dim set_case_statements() As String
+    Dim where_conditions() As String
+    Dim where_condition_in As String
+    Dim where_values_col As collection: Set where_values_col = New collection
+    Dim where_values As Variant, where_column As String
+
+    'Initialize variables
+    c = 0
+    N = 10 ' Batch size
+    set_column_array = Split(set_columns, ";")
+    where_column_array = Split(where_columns, ";")
+    where_column = where_column_array(0)
+    ReDim set_case_statements(UBound(set_column_array))
+    ReDim where_conditions(N - 1)
+
+    'Initialize case statements
+    For i = LBound(set_case_statements) To UBound(set_case_statements)
+        If i = LBound(set_case_statements) Then
+           set_case_statements(i) = "SET " & Trim(set_column_array(i)) & " = CASE"
+        Else
+           set_case_statements(i) = Trim(set_column_array(i)) & " = CASE"
+        End If
+    Next i
+
+    'Process recordset
+    With rs0
+        Do While Not .EOF
+            'Construct where condition for current record
+            where_condition = db.sqlMatchCondition(rs0, where_columns, dbtype0:=dbtype0)
+            where_conditions(c Mod N) = where_condition
+            
+            ' TODO: construct the filtering where_condition_in for all where_columns: WHERE where_column_1 in (...) AND where_column_2 in (...)
+            where_values_col.Add rs0.Fields(where_column).value
+
+            'Construct set conditions for each column
+            For i = LBound(set_case_statements) To UBound(set_case_statements)
+                set_value0 = db.xlToDBvalue(rs0.Fields(Trim(set_column_array(i))).value, dbtype0)
+                set_case_statements(i) = set_case_statements(i) & " WHEN " & where_condition & " THEN " & set_value0
+                
+            Next i
+
+            c = c + 1
+            .MoveNext
+
+            'Check if batch is full or if it's the last record
+            If c Mod N = 0 Or .EOF Then
+                'Complete the CASE statements
+                For i = LBound(set_case_statements) To UBound(set_case_statements)
+                    set_case_statements(i) = set_case_statements(i) & " END"
+                Next i
+
+                'Construct the full SQL update statement
+                where_values = clls.CollectionToArray(where_values_col)
+                where_condition_in = sqlWhereInCondition(where_values, where_column, mssql, force_string:=True)
+                sql0 = "UPDATE " & table_name & " " & Join(set_case_statements, ", ") & " " & where_condition_in & ";" '
+                Set where_values_col = New collection
+
+                'Append to the final SQL statement
+                If (c <= N) Then
+                    sql1 = sql0
+                Else
+                    sql1 = sql1 & db.MSSQL_LINE_BREAK & sql0
+                End If
+
+                'Reset case statements for the next batch
+                For i = LBound(set_case_statements) To UBound(set_case_statements)
+                    If i = LBound(set_case_statements) Then
+                       set_case_statements(i) = "SET " & Trim(set_column_array(i)) & " = CASE"
+                    Else
+                       set_case_statements(i) = Trim(set_column_array(i)) & " = CASE"
+                    End If
+                Next i
+            End If
+        Loop
+        .MoveFirst ' Restore Recordset order
+    End With
+
+    'Return the constructed SQL update statement
+    sqlUpdateCaseStatement = sql1
+End Function
+
 ' READ: send select statement and return recordset
 Public Function queryDB(conn0 As ADODB.Connection, sql0 As String, Optional close_connection As Boolean = False, Optional dbg As Boolean = False) As ADODB.Recordset
     'parameter declaration
@@ -447,8 +565,11 @@ Public Function queryDB(conn0 As ADODB.Connection, sql0 As String, Optional clos
     End If
     
     'open send sql0 to connection conn0
+    Debug.Print sql0
     With rs0
+        If dbg Then
         Debug.Print "queryDB: querying " & sql0
+        End If
         .Open sql0, conn0, adOpenStatic
     End With
     
@@ -473,7 +594,7 @@ return_value:
     
 End Function
 
-Sub writeQueryToSheet(conn0 As Object, sql0 As String, wsName As String, Optional map_format_column_type As String = "")
+Sub writeQueryToSheet(conn0 As Object, sql0 As String, wsName As String, Optional map_format_column_type As String = "", Optional write_empty_records As Boolean = False)
     ' This subroutine queries a database using an SQL statement and outputs the results to a specified worksheet.
     ' It creates the target worksheet if it does not exist, and if it does exist, it clears it of all content and formatting.
     '
@@ -494,7 +615,7 @@ Sub writeQueryToSheet(conn0 As Object, sql0 As String, wsName As String, Optiona
     Set rs0 = db.queryDB(conn0, sql0, False)
     
     ' Check if the recordset is empty and RecordsSetHasFields(rs)
-    If db.RecordSetNumberRecords(rs0) = 0 And Not db.RecordsSetHasFields(rs0) Then
+    If Not write_empty_records And db.RecordSetNumberRecords(rs0) = 0 And Not db.RecordsSetHasFields(rs0) Then
        Debug.Print "writeQueryToSheet: Recordset contains no fields"
        Exit Sub
     End If
@@ -507,7 +628,7 @@ Sub writeQueryToSheet(conn0 As Object, sql0 As String, wsName As String, Optiona
     ws.columns.AutoFit
     
     If Len(map_format_column_type) > 0 Then
-        r.format_columns ws, map_format_column_type, ThisWorkbook
+        r.formatRangeColumns ws, map_format_column_type, ThisWorkbook
     End If
     
     ' Clean up
@@ -575,8 +696,8 @@ r0 = 1
     str0 = ""
         On Error Resume Next
         If print_field_name = False And r0 = 1 Then
-        hdr = util.anything_to_list(.Fields, " ")
-        Debug.Print "record num " & hdr
+            hdr = util.anything_to_list(.Fields, " ")
+            Debug.Print "record num " & hdr
         End If
         
         For c = 1 To .Fields.count
@@ -716,6 +837,7 @@ return_value:
 
 End Function
 
+'9 utilities
 Public Function xlToDBvalue(xlvalue, dbType As dbType, Optional defvalue As String = "*", Optional force_string As Boolean = False)
 ' convert excel value with type `VarType` to numeric or string representation that database `dbType` can interprete
 
@@ -807,4 +929,56 @@ xl_to_xlsdb_value = xlvalue0
 'exit procedure
 Exit Function
 
+End Function
+
+Function toSqlList(values As Variant, Optional force_string As Boolean = False) As String
+    ' This function converts a collection, 1D array, or range to a SQL-compatible list of values.
+    ' The values are converted using the xlToDBvalue function from db.bas.
+    '
+    ' Parameters:
+    ' values : The input collection, 1D array, or range to be converted.
+    '
+    ' Returns:
+    ' A string representing the SQL-compatible list of values.
+    
+    Dim result As String
+    Dim item As Variant
+    Dim dbType As dbType
+    dbType = mssql ' Assuming MSSQL as the database type for conversion
+    
+    ' Check if the input is a 1D array
+    If is_1d_array(values) Then
+        For Each item In values
+            result = result & db.xlToDBvalue(item, dbType, force_string:=force_string) & ","
+        Next item
+        ' Remove the trailing comma
+        If Len(result) > 0 Then result = "(" & left(result, Len(result) - 1) & ")"
+        toSqlList = result
+        Exit Function
+    End If
+    
+    ' Check if the input is a collection
+    If TypeName(values) = "Collection" Then
+        For Each item In values
+            result = result & db.xlToDBvalue(item, dbType, force_string:=force_string) & ","
+        Next item
+        ' Remove the trailing comma
+        If Len(result) > 0 Then result = "(" & left(result, Len(result) - 1) & ")"
+        toSqlList = result
+        Exit Function
+    End If
+    
+    ' Check if the input is a range
+    If TypeName(values) = "Range" Then
+        For Each item In values.Cells
+            result = result & db.xlToDBvalue(item.value, dbType, force_string:=force_string) & ","
+        Next item
+        ' Remove the trailing comma
+        If Len(result) > 0 Then result = "(" & left(result, Len(result) - 1) & ")"
+        toSqlList = result
+        Exit Function
+    End If
+    
+    ' Raise an error if the input is not a 1D array, collection, or range
+    Err.Raise 1002, "toSqlList", "Input must be a 1D array, collection, or range"
 End Function

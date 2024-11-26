@@ -1,7 +1,7 @@
 ' Define init_workbook function to create necessary sheets and headers
 Private Sub Workbook_Open()
     Application.EnableEvents = False
-    Application.DisplayAlerts = False
+    Application.DisplayAlerts = True
     
     ' Initialize the global named ranges
     On Error Resume Next

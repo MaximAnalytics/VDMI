@@ -12,7 +12,7 @@ Global Const ERR_MSG_NO_ARTICLES As String = "Geen artikelen gevonden in T_Part"
 Global Const ERR_MSG_NO_BULK_CODES As String = "Geen ISAH bulken aanwezig op Template"
 
 ' Settings (P_)
-Global Const P_DEBUG = False
+Global Const P_DEBUG = True
 Global Const test_mode = "TEST" 'values are: HOME, TEST, PROD
 Global Const WORKSHEET_IGNORE_MULTIROW_EVENTS = False
 
@@ -24,7 +24,9 @@ Global Const P_NUM_STORED_STATES = 5
 ' ISAH INPUT COLUMNS
 Global Const INPUT_DATA_HEADER As String = "Artikel,Ordernummer,Productieorder,Omschrijving,Bulkcode,Aantal,Qty1,Duur,Resources,Flesformaat,Sluiting,Pallettype,ProdWk,Land,Oproep"
 Global Const INPUT_DATA_FORMATS As String = "General,General,General,General,General,0,0,0.00,General,General,General,General,General,General,General,General,General,General"
+Global Const ISAH_TEMPLATE_COLUMN_FORMATS As String = "Artikel=General;Ordernummer=General;Productieorder=General;Omschrijving=General;Bulkcode=General;Aantal=0;Qty1=0;Duur=0.00;Resources=General;Flesformaat=General;Sluiting=General;Pallettype=General;ProdWk=General;Land=General;Oproep=General"
 Global Const OUTPUT_DATA_FORMATS As String = "General,General,General,General,General,0,0,0.00,General,General,General,General,General,General,General,ddd hh:mm,ddd hh:mm"
+Global Const ORDERS_RANGE_COLUMN_FORMATS As String = "Starttijd=ddd hh:mm;Eindtijd=ddd hh:mm"
 Global Const INPUT_ISAH_SHEET = "Template"
 Global Const PRODWK_COLUMN As String = "ProdWk"
 Global Const capgrp_column As String = "Cap.Grp"
@@ -58,14 +60,16 @@ Global Const ORDERS_RANGE_VOLGNUMMER_COLUMN = "volgnummer"
 Global Const BTN_UPDATE_ISAH_ADDRESS As String = "A2"
 Global Const BTN_ADD_RECORD_ADDR As String = "A5"
 Global Const BTN_DELETE_RECORD_ADDR As String = "A8"
-Global Const BTN_RESTORE_PREV_STATE_ADDR As String = "C8"
-Global Const BTN_PRINT_DATES_ADDR As String = "A11"
-Global Const BTN_CALCULATE_DATES_ADDR As String = "C11"
+Global Const BTN_RESTORE_PREV_STATE_ADDR As String = "A11"
+Global Const BTN_EXPORT_PDF_ADDR As String = "C8"
+Global Const BTN_PRINT_DATES_ADDR As String = "C11"
+Global Const BTN_CALCULATE_DATES_ADDR As String = "D11"
 Global Const BTN_WIDTH = 90
 Global Const BTN_HEIGHT = 30
-Global Const BTN_LEFT_OFFSET = 10
+Global Const BTN_LEFT_OFFSET = 20
+Global Const BTN_SECOND_COLUMN_LEFT_OFFSET = 9
 
-' button labels
+' BUTTONS
 Global Const BTN_RESTORE_PREV_STATE_LABEL = "Ga terug"
 
 ' ORDERS sheet layout
@@ -75,17 +79,22 @@ Global Const WT_HEADER_COLOR = 15123099
 Global Const WT_IDS_COLOR = 11389944
 Global Const WT_VALUES_COLOR = 13431551
 Global Const TANK_LO_COLUMN_WIDTH = 8.5
+Global Const COLUMN_AB_WIDTH = 70
+Global Const COLUMN_CD_WIDTH = 110
 
 'PRINT LAYOUT
 Global Const PRINT_SHEET_NAME = "PRINT"
 Global Const PRINT_ORDERS_ADDRESS = "A11"
-Global Const PRINT_WORKDAYS_ADDRESS = "K2"
+Global Const PRINT_WORKDAYS_ADDRESS = "J2"
+Global Const PRINT_EXTRA_INFO_ADDRESS = "S2:U9"
+Global Const PRINT_EXTRA_INFO_FIELDS = "Field1;Field2;Field3"
 Global Const PRINT_FILE_RANGE_ADDRESS As String = "C6"
-Global Const PRINT_FILE_RANGE_IDS As String = ",Locatie print bestand"
+Global Const PRINT_FILE_RANGE_IDS As String = ",Locatie PDF bestand"
 Global Const PRINT_FILE_RANGE_HEADER As String = ","
 Global Const PRINT_RENAME_COLUMNS = "volgnummer=#;Ordernummer=OrderNr;Productieorder=ProdOrd;Resources=Res;# pallets=#Plts;Flesformaat=Fles;Sluiting=Slt;ProdWk=Wk;Land=Ld;Pallettype=PltType"
 Global Const PRINT_TITLE_START = "A2"
 Global Const PRINT_TITLE_RANGE = "A2:H6"
+Global Const PRINT_SHOW_PDF_EXPORTED As Boolean = True
 
 ' COMPONENTS
 Global Const BASE_SHEET_NAME As String = "base"
@@ -119,7 +128,8 @@ Global Const BTN_IMPORT_ART_ADDR = "B2"
 Global Const BTN_IMPORT_BULK_ADDR = "B8"
 Global Const BTN_ADD_CAPGRP_ADDR = "B14"
 Global Const BTN_ISAH_EXPORT_ADDR = "B20"
-Global Const BTN_CLEAR_SHEET = "B26"
+'Global Const BTN_CLEAR_SHEET = "B26"
+Global Const BTN_ADD_NEW_ORDERS_ADDR = "D12"
 Global Const CONNECTION_STRINGS_NAMED_RANGE = "settings_connection_strings"
 Global Const DATABASE_DROPDOWN_LABEL_ADDR = "H2"
 Global Const DATABASE_DROPDOWN_ADDR = "H3"
@@ -131,9 +141,10 @@ Global Const SELECTED_DATABASE_NAME_ADDR = "H5"
 Global Const NUMBER_PER_PALLET_SHEET_NAME = "aantal_per_pallet"
 Global Const NUMBER_PER_PALLET_NAMED_RANGE = "metadata_number_per_pallet"
 Global Const NUMBER_OF_PALLETS_NAME = "# pallets"
-Global Const INPAK_CAPGRP_LIST = "NIVP;VDAM;INPK;SPEC;HCM "
-Global Const CAPGRP_SHEET_PATTERN = "^LN(.*?)|INPAK"
+Global Const INPAK_CAPGRP_LIST = "XXX" '"NIVP;VDAM;INPK;SPEC;HCM "
+Global Const CAPGRP_SHEET_PATTERN = "^LN(.*?)"
 Global Const MAP_NUMBER_PER_PALLET_COL_TO_FMT = "Artikel=@;Omschrijving=General;aantal_per_pallet=0"
+Global Const GAPGRP_FILTER_SHEET = "CAPGRP"
 
 ' ISAH database
 Global Const ISAH_STAGING_SHEET_NAME = "EXPORT_ISAH"
@@ -141,7 +152,7 @@ Global Const ISAH_STAGING_COLUMNS = "Productieorder;Starttijd;Eindtijd;Resources
 Global Const ISAH_STAGING_COLUMNS_DB_NAMES = "ProdHeaderOrdNr;StartDate;EndDate;MachGrpCode;Qty;Duur"
 Global Const ISAH_STAGING_CAGGRP_COLUMN = "CAPGRP"
 Global Const ISAH_STAGING_UPDATE_COLUMNS = "match_prod_header;StartDate_header;EndDate_header;ProdHeaderDossierCode;match_prod_boo;StartDate_boo;EndDate_boo;next_StartDate_header;next_Enddate_header;check_dates_header;next_StartDate_boo;next_Enddate_boo;check_dates_boo;next_StartTime_boo;next_StandCapacity_boo;next_MachPlanTime_boo;check_ProdBOOStatusCode"
-Global Const ISAH_STAGING_UPDATE_COLUMNS_FORMATS = "0;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;0;0;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;0;yyyy-mm-dd hh:mm;yyyy-mm-dd hh:mm;0;General;0;0;General"
+Global Const ISAH_STAGING_UPDATE_COLUMNS_FORMATS = "match_prod_header=0;StartDate_header=yyyy-mm-dd hh:mm;EndDate_header=yyyy-mm-dd hh:mm;ProdHeaderDossierCode=0;match_prod_boo=0;StartDate_boo=yyyy-mm-dd hh:mm;EndDate_boo=yyyy-mm-dd hh:mm;next_StartDate_header=yyyy-mm-dd hh:mm;next_Enddate_header=yyyy-mm-dd hh:mm;check_dates_header=0;next_StartDate_boo=yyyy-mm-dd hh:mm;next_Enddate_boo=yyyy-mm-dd hh:mm;check_dates_boo=0;next_StartTime_boo=General;next_StandCapacity_boo=0;next_MachPlanTime_boo=0;check_ProdBOOStatusCode=General"
 
 Global Const ISAH_STAGING_RANGE_NAME = "isah_staging_orders_range"
 Global Const ISAH_STAGING_ORDERNR_INDEX = 1
@@ -153,7 +164,7 @@ Global Const ISAH_DATABASE_DATE_COLUMNS = "convert(VARCHAR(20), StartDate) as St
 
 Global Const ISAH_CHECK_BOM_REQUIRED_DATE_SHEET = "CHECK_PROD_BILL_OF_MAT"
 Global Const ISAH_MATCH_BOM_REQUIRED_DATE_SHEET = "JOIN_ISAH_EXPORT_PROD_BOM"
-Global Const CHECK_BOM_REQUIRED_DATE_SHEET_COLUMNS_MAP = "ProdHeaderDossierCode=0;min_bom_required_date=yyyy-mm-dd hh:mm;max_bom_required_date=yyyy-mm-dd hh:mm"
+Global Const CHECK_BOM_REQUIRED_DATE_COLUMNS_FORMATS = "ProdHeaderDossierCode=0;min_bom_required_date=yyyy-mm-dd hh:mm;max_bom_required_date=yyyy-mm-dd hh:mm"
 
 'ISAH database constants
 Global Const ISAH_MANUAL_UPDATE_PRODBOOSTATUSCODE = "20" ' in ProdBOO set field ProdBOOStatusCode to this value
@@ -161,6 +172,13 @@ Global Const ISAH_MANUAL_UPDATE_PRODBOOSTATUSCODE = "20" ' in ProdBOO set field 
 ' Worksheet sorting
 Global Const SHEETS_START_ORDER = "instructie;overzicht;Template;BULK"
 Global Const LAST_CAPGRP_SHEET_NAME = "LN18"
+
+' NEW ORDERS
+Global Const ISAH_NEW_ORDERS_SHEET_NAME = "NIEUW"
+
+
+' Public (global) variables
+Public WorkBookConnection As Object
 
 ' variables
 Dim capgrp As String, capgrp_sheet As String, range_name As String, workdaytimes_range As Range
@@ -196,7 +214,7 @@ Dim rng0 As Range
 '    - get_template_capgrp_names
 '    - get_isah_capgrps
 '    - get_capgrp_sheet_names
-'    - get_art_capgrp
+'    - get_art_capgrps
 '    - get_last_art_capgrp
 '    - get_bulk_capgrp
 '    orders: get_orders_range, set_orders_range_values
@@ -225,17 +243,14 @@ Dim rng0 As Range
 '    - get_workdaytimes_array
 '    - set_capgrp_weeknumber
 '    - set_capgrp_year
-'    - set_capgrp_default_inputs
+'    - set_default_weeknumber_year
 '    - update_start_end_times
 '    - find_week_overflow_row
 '    - calculate_start_end_times
 '    - find_block_starttime
 '    - find_block_endtime
 '    - get_last_block
-
 '    - clear_all_capgrp_sheets
-
-
 '    - insert_number_of_pallets_formula
 '    - insert_record
 '    - delete_record
@@ -317,7 +332,7 @@ Dim rng0 As Range
 '    - test_
 
 ' INITIALIZERS: create capgrp sheets, UI panels, buttons
-Sub init_capgrp_sheets(Optional capgrp_sheet_filter As String)
+Sub init_capgrp_sheets(Optional capgrp_sheet_filter As String, Optional capgrp_sheet_names As collection = Nothing)
 
   ' get the unique article capgrps, bulk capgrps (starting with U) are handled in different sheet
   Dim capgrp_sheets As collection, rng0 As Range, rng1 As Range, rng2 As Range, ws0 As Worksheet, ws1 As Worksheet
@@ -331,8 +346,15 @@ Sub init_capgrp_sheets(Optional capgrp_sheet_filter As String)
   
   On Error GoTo handle_error
   
+  ' capgrp_to_create: either the capgrps in the Template sheet or passed capgrp_sheet_names
+  Dim capgrp_to_create As collection
+  If capgrp_sheet_names Is Nothing Then
+     Set capgrp_sheets = main.get_template_capgrp_names()
+  Else
+     Set capgrp_sheets = capgrp_sheet_names
+  End If
+  
   ' Get all capgrp sheets to initialize
-  Set capgrp_sheets = main.get_template_capgrp_names()
   For Each c In capgrp_sheets
      ' 0 select capgrp orders from input ISAH and copy to capgrp_sheet
      capgrp = c
@@ -344,7 +366,7 @@ Sub init_capgrp_sheets(Optional capgrp_sheet_filter As String)
         Debug.Print "initialize capgrp sheet: " + capgrp
      End If
      
-     ' if sheet exists, delete and add, copy base sheet CODE and rename
+     ' 1. if sheet exists, delete and add, copy base sheet CODE and rename
      delete_worksheet capgrp, ThisWorkbook
      Set ws0 = w.get_or_create_worksheet(capgrp, ThisWorkbook)
      vb.CopyWorksheetCode "base", capgrp
@@ -365,7 +387,7 @@ Sub init_capgrp_sheets(Optional capgrp_sheet_filter As String)
      ' 4 update start and end times
      update_start_end_times capgrp
 
-     ' 5 initialize controls
+     ' 5 initialize control buttons
      main.init_buttons capgrp, True
      
      ' freeze panes
@@ -413,6 +435,7 @@ Sub insert_volgnummer_into_orders(capgrp As String, Optional volgnummer_index As
     Dim orders_rng As Range
     Set orders_rng = main.get_orders_range(capgrp)
     r.InsertColumnIntoRange orders_rng, volgnummer_index, main.ORDERS_RANGE_VOLGNUMMER_COLUMN
+    
     'orders range is mutated so update in named range
     r.update_named_range main.get_orders_range_name(capgrp), orders_rng
     
@@ -423,9 +446,15 @@ Sub insert_volgnummer_into_orders(capgrp As String, Optional volgnummer_index As
 End Sub
 
 Sub calculate_volgnummer(capgrp As String, Optional volgnummer_index As Integer = 1)
-    Dim orders_rng As Range
+    Dim orders_rng As Range, i As Long
+    
     Set orders_rng = main.get_orders_range(capgrp)
-    Dim i As Long
+    
+    'TODO figure out why volgnummer is not in range
+    If Not r.column_exist(orders_rng, "volgnummer") Then
+       Exit Sub
+    End If
+    
     If orders_rng.count > 1 Then
         For i = 2 To orders_rng.Rows.count
             orders_rng.Cells(i, volgnummer_index).value = i - 1
@@ -449,6 +478,15 @@ Sub restore_ln1()
     main.update_orders_range "LN 1"
     Application.EnableEvents = True
     Application.ScreenUpdating = True
+End Sub
+
+Sub test_init_orders_range()
+    Application.EnableEvents = False
+    Dim range_name As String, capgrp As String
+    capgrp = "LN 6"
+    range_name = capgrp & "_orders"
+    main.init_orders_range capgrp, range_name, True
+    Application.EnableEvents = True
 End Sub
 
 Sub init_orders_range(capgrp As String, range_name As String, overwrite As Boolean)
@@ -476,7 +514,7 @@ Sub init_orders_range(capgrp As String, range_name As String, overwrite As Boole
       input_data_columns = str.str_to_array(main.INPUT_DATA_HEADER)
       c1 = a.num_array_columns(input_data_columns)
       Set rng0 = r.expand_range(main.ORDERS_RANGE_ADDR, ws:=ThisWorkbook.Worksheets(capgrp), c1:=c1, dbg:=main.P_DEBUG)
-      r.delete_named_range range_name, clear:=False
+      r.delete_named_range range_name, clear:=True
       r.create_named_range range_name, capgrp, rng0.address, overwrite:=overwrite, expand_range:=False
       'add startdate, enddate columns without formatting
       Set rng0 = add_date_columns(range_name)
@@ -567,7 +605,8 @@ End Function
 Sub init_print_file_range(capgrp As String)
     range_name = capgrp & "_input_print_location"
     r.create_named_range range_name, capgrp, main.PRINT_FILE_RANGE_ADDRESS, header_row:=",", id_row:=main.PRINT_FILE_RANGE_IDS, overwrite:=True
-    r.get_range(range_name).Cells(2, 2).value = main.DEFAULT_PRINT_FILE_PATH & "planning_" & capgrp & ".pdf"
+    'r.get_range(range_name).Cells(2, 2).value = main.DEFAULT_PRINT_FILE_PATH & "planning_" & capgrp & ".pdf"
+    main.set_capgrp_print_location capgrp
     r.get_range(range_name).Cells(2, 2).Interior.Color = main.INPUT_FIELD_COLOR
 End Sub
 
@@ -577,6 +616,7 @@ Sub init_buttons(capgrp As String, Optional overwrite As Boolean = True)
     Dim left_offset As Long
     left_offset = main.BTN_LEFT_OFFSET
     
+    ' first column of buttons: Overhalen orders, Regel toevoegen, Regel verwijderen,Ga Terug
     ctr.add_button "btn_update_isah_data_" & capgrp, main.BTN_UPDATE_ISAH_ADDRESS, ws:=wb.Sheets(capgrp), _
     overwrite:=overwrite, label:="Overhalen orders", h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
     assign_macro_to_btn "btn_update_isah_data_" & capgrp, "btn_update_isah_data_Click"
@@ -593,13 +633,51 @@ Sub init_buttons(capgrp As String, Optional overwrite As Boolean = True)
     overwrite:=overwrite, label:=main.BTN_RESTORE_PREV_STATE_LABEL, h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
     assign_macro_to_btn "btn_restore_prev_state_" & capgrp, "btn_restore_prev_state_Click"
     
+    ' second column of buttons: Exporteren PDF, Printen planning,
+    ctr.add_button "btn_export_pdf_" & capgrp, main.BTN_EXPORT_PDF_ADDR, ws:=wb.Sheets(capgrp), _
+    overwrite:=overwrite, label:="Exporteren PDF", h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
+    assign_macro_to_btn "btn_export_pdf_" & capgrp, "btn_export_pdf_Click"
+    
     ctr.add_button "btn_print_dates_" & capgrp, main.BTN_PRINT_DATES_ADDR, ws:=wb.Sheets(capgrp), _
     overwrite:=overwrite, label:="Printen planning", h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
     assign_macro_to_btn "btn_print_dates_" & capgrp, "btn_print_dates_Click"
     
+    'third column of buttons:Actualiseer tijden
     ctr.add_button "btn_calculate_dates_" & capgrp, main.BTN_CALCULATE_DATES_ADDR, ws:=wb.Sheets(capgrp), _
     overwrite:=overwrite, label:="Actualiseer tijden", h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
     assign_macro_to_btn "btn_calculate_dates_" & capgrp, "btn_calculate_dates_Click"
+    
+End Sub
+
+Sub position_buttons(capgrp As String)
+    'Declare variables
+    Dim wb As Workbook
+    Dim left_offset As Long
+    
+    'Initialize variables
+    Set wb = ThisWorkbook
+    left_offset = main.BTN_LEFT_OFFSET
+    
+    ' Position the "Overhalen orders" button
+    ctr.positionButton "btn_update_isah_data_" & capgrp, main.BTN_UPDATE_ISAH_ADDRESS, ws:=wb.Sheets(capgrp), left_offset:=left_offset
+    
+    'Position the "Regel toevoegen" button
+    ctr.positionButton "btn_add_record_" & capgrp, main.BTN_ADD_RECORD_ADDR, ws:=wb.Sheets(capgrp), left_offset:=left_offset
+    
+    'Position the "Regel verwijderen" button
+    ctr.positionButton "btn_delete_record_" & capgrp, main.BTN_DELETE_RECORD_ADDR, ws:=wb.Sheets(capgrp), left_offset:=left_offset
+    
+    'Position the "Ga Terug" button
+    ctr.positionButton "btn_restore_prev_state_" & capgrp, main.BTN_RESTORE_PREV_STATE_ADDR, ws:=wb.Sheets(capgrp), left_offset:=left_offset
+    
+    'Position the "Exporteren PDF" button
+    ctr.positionButton "btn_export_pdf_" & capgrp, main.BTN_EXPORT_PDF_ADDR, ws:=wb.Sheets(capgrp), left_offset:=main.BTN_SECOND_COLUMN_LEFT_OFFSET
+    
+    'Position the "Printen planning" button
+    ctr.positionButton "btn_print_dates_" & capgrp, main.BTN_PRINT_DATES_ADDR, ws:=wb.Sheets(capgrp), left_offset:=main.BTN_SECOND_COLUMN_LEFT_OFFSET
+    
+    'Position the "Actualiseer tijden" button
+    ctr.positionButton "btn_calculate_dates_" & capgrp, main.BTN_CALCULATE_DATES_ADDR, ws:=wb.Sheets(capgrp), left_offset:=main.BTN_SECOND_COLUMN_LEFT_OFFSET
 End Sub
 
 Sub init_worksheet_sorting()
@@ -607,12 +685,12 @@ Sub init_worksheet_sorting()
     ' start with SHEETS_START_ORDER
     Set newSheets = clls.toCollection(main.SHEETS_START_ORDER, ";")
     
-    ' add the LN sheets
+    ' add the Template capgrp sheets
     Set lnSheetNames = main.get_capgrp_sheet_names()
     Set sheetOrder = clls.concatCollections(newSheets, lnSheetNames)
     
-    ' finally: INPAK, ...
-    Set newSheets = clls.toCollection("INPAK;" & main.NUMBER_PER_PALLET_SHEET_NAME, ";")
+    ' finally: NIEUW, ...
+    Set newSheets = clls.toCollection("NIEUW;EXPORT_ISAH;" & main.NUMBER_PER_PALLET_SHEET_NAME, ";")
     Set sheetOrder = clls.concatCollections(sheetOrder, newSheets)
     
     ' order the sheets
@@ -648,32 +726,115 @@ Sub init_control_sheet()
      ctr.add_button "btn_isah_database_export", main.BTN_ISAH_EXPORT_ADDR, ws:=ws, overwrite:=True, label:="Exporteren naar ISAH database", w:=main.BTN_WIDTH
      main.assign_macro_to_btn "btn_isah_database_export", "btn_isah_database_export_Click"
     
-     ctr.add_button "btn_clear_sheet", main.BTN_CLEAR_SHEET, ws:=ws, overwrite:=True, label:="Alle productielijnen wissen", w:=main.BTN_WIDTH
-     main.assign_macro_to_btn "btn_clear_sheet", "btn_clear_sheet_Click"
+     'ctr.add_button "btn_clear_sheet", main.BTN_CLEAR_SHEET, ws:=ws, overwrite:=True, label:="Alle productielijnen wissen", w:=main.BTN_WIDTH
+     'main.assign_macro_to_btn "btn_clear_sheet", "btn_clear_sheet_Click"
+     
+     ctr.add_button "btn_add_new_orders", main.BTN_ADD_NEW_ORDERS_ADDR, ws:=ws, overwrite:=True, label:="Orders van tabblad NIEUW toevoegen", w:=main.BTN_WIDTH
+     main.assign_macro_to_btn "btn_add_new_orders", "btn_add_new_orders_Click"
 End Sub
 
 Sub layout_control_sheet_buttons()
      Dim ws As Worksheet
      Set ws = ThisWorkbook.Sheets(main.CONTROL_SHEET_NAME)
+     
      ' initialize buttons
      ctr.add_button "btn_import_art", main.BTN_IMPORT_ART_ADDR, ws:=ws, _
-     overwrite:=True, label:="Importeren alle artikelen", w:=main.BTN_WIDTH
+     overwrite:=False, label:="Importeren alle artikelen", w:=main.BTN_WIDTH
      main.assign_macro_to_btn "btn_import_art", "btn_import_art_Click"
      
      ctr.add_button "btn_import_bulk", main.BTN_IMPORT_BULK_ADDR, ws:=ws, _
-     overwrite:=True, label:="Importeren bulken", w:=main.BTN_WIDTH
+     overwrite:=False, label:="Importeren bulken", w:=main.BTN_WIDTH
      main.assign_macro_to_btn "btn_import_bulk", "btn_import_bulk_Click"
 
      ctr.add_button "btn_add_capgrp_sheets", main.BTN_ADD_CAPGRP_ADDR, ws:=ws, _
-     overwrite:=True, label:="Toevoegen nieuwe capaciteitsgroepen", w:=main.BTN_WIDTH
+     overwrite:=False, label:="Toevoegen nieuwe capaciteitsgroepen", w:=main.BTN_WIDTH
      main.assign_macro_to_btn "btn_add_capgrp_sheets", "btn_add_capgrp_sheets_Click"
      
-     ctr.add_button "btn_isah_database_export", main.BTN_ISAH_EXPORT_ADDR, ws:=ws, overwrite:=True, label:="Exporteren naar ISAH database", w:=main.BTN_WIDTH
+     ctr.add_button "btn_isah_database_export", main.BTN_ISAH_EXPORT_ADDR, ws:=ws, overwrite:=False, label:="Exporteren naar ISAH database", w:=main.BTN_WIDTH
      main.assign_macro_to_btn "btn_isah_database_export", "btn_isah_database_export_Click"
     
-     ctr.add_button "btn_clear_sheet", main.BTN_CLEAR_SHEET, ws:=ws, overwrite:=True, label:="Alle productielijnen wissen", w:=main.BTN_WIDTH
-     main.assign_macro_to_btn "btn_clear_sheet", "btn_clear_sheet_Click"
+     'ctr.add_button "btn_clear_sheet", main.BTN_CLEAR_SHEET, ws:=ws, overwrite:=false, label:="Alle productielijnen wissen", w:=main.BTN_WIDTH
+     'main.assign_macro_to_btn "btn_clear_sheet", "btn_clear_sheet_Click"
+
+     ctr.add_button "btn_add_new_orders", main.BTN_ADD_NEW_ORDERS_ADDR, ws:=ws, overwrite:=False, label:="Orders van tabblad NIEUW toevoegen", w:=main.BTN_WIDTH
+     main.assign_macro_to_btn "btn_add_new_orders", "btn_add_new_orders_Click"
+     
 End Sub
+
+Sub layout_position_control_buttons()
+    ' Documentation: This subroutine arranges buttons on an Excel worksheet based on specified parameters.
+    ' It sets the size and position of each button in the btn_names array.
+    ' The first 4 buttons are aligned relative to cell A1, and the next 4 buttons are aligned relative to cell D1.
+
+    Dim btn_names As Variant
+    Dim w As Double, h As Double
+    Dim right_distance As Double, top_distance As Double, top_interval As Double
+    Dim i As Integer
+    Dim btn As Object
+    Dim ws As Worksheet
+    
+    ' Initialize the worksheet
+    Set ws = ThisWorkbook.Sheets(main.CONTROL_SHEET_NAME)
+    
+    ' Initialize button names
+    btn_names = Array("btn_import_art", "btn_import_bulk", "Button 14", "Button 15", "btn_isah_database_export", "btn_add_capgrp_sheets", "", "Button 13")
+    
+    ' Set button size
+    w = 88 ' Width of the button
+    h = 52  ' Height of the button
+    
+    ' Set alignment parameters
+    right_distance = 32 ' Distance from the right of the reference cell
+    top_distance = 18    ' Initial top distance from the reference cell
+    top_interval = 75   ' Interval increase for each subsequent button
+    
+    ' Loop through each button name in the array
+    For i = LBound(btn_names) To UBound(btn_names)
+        If (btn_names(i) = "") Then
+        GoTo next_i
+        End If
+        
+        ' Create or reference the button
+        Set btn = ws.Buttons(btn_names(i))
+        
+        ' Set button size
+        btn.Width = w
+        btn.Height = h
+        
+        ' Determine button position
+        If i < 4 Then
+            ' First 4 buttons aligned to cell A1
+            btn.left = ws.Range("A1").left + right_distance
+            btn.Top = ws.Range("A1").Top + top_distance + (i * top_interval)
+        Else
+            ' Next 4 buttons aligned to cell D1
+            btn.left = ws.Range("D1").left + right_distance
+            btn.Top = ws.Range("D1").Top + top_distance + ((i - 4) * top_interval)
+        End If
+next_i:
+    Next i
+End Sub
+
+Sub test_control_button()
+Dim ws As Worksheet
+Set ws = ThisWorkbook.Sheets(main.CONTROL_SHEET_NAME)
+Set btn = ws.Buttons("btn_import_art")
+Debug.Print btn.Width, btn.Height
+Debug.Print Range("A1").left, Range("D1").left, btn.left
+Debug.Print Range("A2").Top, Range("A7").Top
+End Sub
+
+' 2.Data Retrieval and Processing
+' Public variables
+Function getWorkbookConnection() As ADODB.Connection
+   If WorkBookConnection Is Nothing Then
+      Set WorkBookConnection = db.openExcelConn(ThisWorkbook)
+      Set getWorkbookConnection = WorkBookConnection
+      Exit Function
+   Else
+      Set getWorkbookConnection = WorkBookConnection
+   End If
+End Function
 
 ' GETTERS
 Function get_isah_input_range() As Range
@@ -682,6 +843,13 @@ Function get_isah_input_range() As Range
     Set rng0 = r.expand_range(ws0.Cells(1), ws0, dbg:=main.P_DEBUG)
     Set get_isah_input_range = rng0
 End Function
+
+Sub format_isah_input_range()
+    Dim ws0 As Worksheet, rng0 As Range
+    Set ws0 = ThisWorkbook.Sheets(main.INPUT_ISAH_SHEET)
+    Set rng0 = r.expand_range("A1", ws0)
+    r.formatRangeColumns rng0, ISAH_TEMPLATE_COLUMN_FORMATS, ThisWorkbook
+End Sub
 
 Function get_isah_capgrp() As Variant
     Dim rng0 As Range, rng1 As Range
@@ -693,8 +861,10 @@ End Function
 'get the capgrp names (LN 1, LN 2, ...) from the Template sheet, to use for initializing capgrp sheets
 Function get_template_capgrp_names() As collection
     Dim col0 As New collection, map_capgrp_inpak_col As collection, capgrp_sheet As String
-    Set art_capgrp_col = a.as_collection(main.get_art_capgrp())
+    Set art_capgrp_col = a.as_collection(main.get_art_capgrps())
     Set map_capgrp_inpak_col = a.as_collection(Split(CStr(main.INPAK_CAPGRP_LIST), ";"))
+    
+    ' merge the INPAK capgrps to INPAK
     For Each c In art_capgrp_col
         capgrp = c
         'capgrps to map to INPAK, add INPAK if not added yet
@@ -740,39 +910,46 @@ End Function
 
 ' get capgrp names from sheets
 Function get_capgrp_sheet_names() As collection
-    Dim ws0 As Worksheet
-    Dim col0 As New collection
+    Dim art_capgrps As Variant, col0 As New collection
+    art_capgrps = main.get_art_capgrps()
     For Each ws0 In ThisWorkbook.Sheets
-        If str.regexp_match(ws0.name, main.CAPGRP_SHEET_PATTERN) Then
-            col0.Add ws0.name
+        If a.ItemInArray(ws0.name, art_capgrps) Or str.regexp_match(ws0.name, main.CAPGRP_SHEET_PATTERN) Then
+           col0.Add ws0.name
         Else
-            GoTo nx_ws
+           GoTo nx_ws
         End If
 nx_ws:
     Next
     Set get_capgrp_sheet_names = clls.sort_collection(col0, True)
 End Function
 
-Function get_art_capgrp() As Variant
-    arr = main.get_isah_capgrp()
-    ' skip bulk capgrps
-    Dim result() As Variant
-    ReDim result(LBound(arr) To UBound(arr))
-    Dim i As Long, j As Long
-    j = 0
-    For i = LBound(arr) To UBound(arr)
-        If left(arr(i), 1) <> "U" Then
-            result(j) = arr(i)
-            j = j + 1
-        End If
-    Next i
-    ReDim Preserve result(0 To j - 1)
-    get_art_capgrp = result
+Sub test_get_art_capgrps()
+
+' Get filter patterns from the GAPGRP_FILTER_SHEET
+Dim rng0 As Range
+Set rng0 = r.expand_range("A1", main.GAPGRP_FILTER_SHEET)
+filterPatterns = r.get_column_values(rng0, "Capgrp")
+'a.printArray filterPatterns
+
+a.printArray main.get_art_capgrps()
+
+a.printArray a.FilterVectorWithPattern(main.get_isah_capgrp(), "^U", True)
+
+a.printArray main.get_bulk_capgrp()
+a.printArray a.FilterVectorWithPattern(main.get_isah_capgrp(), "^U", False)
+
+End Sub
+
+Function get_art_capgrps() As Variant
+    ' return ISAH capgrp NOT starting with U
+    Dim isah_capgrp_array As Variant
+    isah_capgrp_array = main.get_isah_capgrp()
+    get_art_capgrps = a.FilterVectorWithPattern(isah_capgrp_array, "^U", True)
 End Function
 
 Function get_last_art_capgrp() As String
     Dim col0 As collection
-    Set col0 = a.as_collection(main.get_art_capgrp())
+    Set col0 = a.as_collection(main.get_art_capgrps())
     If col0.count > 0 Then
     get_last_art_capgrp = col0.item(col0.count)
     Else
@@ -781,21 +958,10 @@ Function get_last_art_capgrp() As String
 End Function
 
 Function get_bulk_capgrp() As Variant
-    arr = main.get_isah_capgrp()
-    ' keep bulk capgrps, starting with "U"
-    Dim col0 As New collection
-    Dim i As Long
-    For i = LBound(arr) To UBound(arr)
-        If left(arr(i), 1) = "U" Then
-            col0.Add arr(i)
-        End If
-    Next i
-    If col0.count > 0 Then
-       get_bulk_capgrp = a.to_array(col0)
-    Else
-       Dim arr0 As Variant ' empty "Variant"
-       get_bulk_capgrp = arr0
-    End If
+    ' return ISAH capgrp starting with U
+    Dim isah_capgrp_array As Variant
+    isah_capgrp_array = main.get_isah_capgrp()
+    get_bulk_capgrp = a.FilterVectorWithPattern(isah_capgrp_array, "^U", False)
 End Function
 
 Function get_orders_range(capgrp As String) As Range
@@ -945,7 +1111,7 @@ Sub update_bulk_capgrp_orders()
    If r.name_exist(range_name) Then
        r.delete_named_range range_name, clear:=True
    End If
-
+   
    ' Add named range with header
    r.create_named_range main.BULK_ORDERS_RANGE_NAME, main.BULK_SHEET_NAME, main.BULK_SHEET_START_ADDR, expand_range:=False, clear:=False, header_row:=Replace(main.BULK_ORDER_SHEET_HEADER, ";", ",")
    
@@ -960,7 +1126,7 @@ Sub update_bulk_capgrp_orders()
    
    ' 2.2 filter orders from the bulk capgrp only
    bulk_capgrp_array = main.get_bulk_capgrp()
-   If Not IsArray(bulk_capgrp_array) Then
+   If Not IsArray(bulk_capgrp_array) Or a.ArrayIsEmpty(bulk_capgrp_array) Then
       ' no BULK capgrps found in ISAH Template, skip procedure
       Debug.Print "no BULK capgrps found in ISAH Template"
       MsgBox main.ERR_MSG_NO_BULK_CODES
@@ -972,7 +1138,6 @@ Sub update_bulk_capgrp_orders()
    input_data_columns = str.str_to_array(main.BULK_ORDERS_HEADER)
    selected_array = filtered_array
    selected_values_array = a.subset_rows(selected_array, LBound(selected_array) + 1)
-
    ordernr_arr = a.subset_columns(selected_values_array, ordernr_index, ordernr_index)
    bulkcode_arr = a.subset_columns(selected_values_array, bulkcode_index, bulkcode_index)
    qty_arr = a.subset_columns(selected_values_array, qty_index, qty_index)
@@ -980,12 +1145,12 @@ Sub update_bulk_capgrp_orders()
    
    ' restore default sorting of isah input sheet
    main.restore_isah_default_sorting
-   If a.num_array_rows(selected_array) <= 1 Then
+   If a.numArrayRows(selected_array) <= 1 Then
       GoTo finally
    End If
 
    ' resize to fit ordernr_arr,bulkcode,qty
-   num_rows = a.num_array_rows(ordernr_arr)
+   num_rows = a.numArrayRows(ordernr_arr)
    r.resize_named_range range_name, add_rows:=num_rows
    
    ' set ordernr, bulkcode, qty values
@@ -1331,11 +1496,85 @@ Sub set_capgrp_year(capgrp_sheet As String, year As Integer)
 End Sub
 
 Function get_capgrp_print_location(capgrp As String) As String
-    get_capgrp_print_location = r.get_range(capgrp & "_input_print_location").Cells(2, 2).value
+    ' Retrieves the print location for a specified capacity group (capgrp).
+    ' If the print location is an absolute path, it validates the path.
+    ' If the print location is not an absolute path, it joins with the documents path to construct an absolute path and validates it.
+    '
+    ' Parameters:
+    ' capgrp - The name of the capacity group for which the print location is being retrieved.
+    '
+    ' Returns:
+    ' A string representing the validated absolute path for the print location.
+    
+    Dim printLocation As String
+    printLocation = r.get_range(capgrp & "_input_print_location").Cells(2, 2).value
+    
+    ' Check if the print location is an absolute path
+    If left(printLocation, 1) = "\" Or InStr(printLocation, ":") > 0 Then
+        ' Validate the absolute path
+        If validate_path(printLocation) Then
+            get_capgrp_print_location = printLocation
+        Else
+            MsgBox "Directory does not exist: " & printLocation
+            get_capgrp_print_location = ""
+        End If
+    Else
+        ' Join with the documents path to construct an absolute path
+        Dim documentsPath As String
+        documentsPath = os.getDocumentsPath() ' Assuming getDocumentsPath is defined in os.bas
+        Dim fullPath As String
+        fullPath = os.pathJoin(documentsPath, printLocation)
+        
+        ' Validate the constructed path
+        If validate_path(fullPath) Then
+            get_capgrp_print_location = fullPath
+        Else
+            MsgBox "Directory does not exist: " & fullPath
+            get_capgrp_print_location = ""
+        End If
+    End If
 End Function
 
+Function validate_path(path As String) As Boolean
+    ' Validates a given path by checking if the directory part exists.
+    '
+    ' Parameters:
+    ' path - The path to validate.
+    '
+    ' Returns:
+    ' True if the directory part of the path exists, False otherwise.
+    Dim parts As Variant
+    parts = os.pathSplit(path)
+    Dim directoryPart As String
+    directoryPart = parts(0)
+    
+    If os.isDir(directoryPart) Then
+        validate_path = True
+    Else
+        validate_path = False
+    End If
+End Function
+
+Sub set_capgrp_print_location(capgrp As String, Optional overwrite As Boolean = False)
+    ' Sets the print location for a specified capacity group (capgrp).
+    ' If the print location is empty, it sets a default value.
+    ' If overwrite is True, it overwrites the current print location.
+    '
+    ' Parameters:
+    ' capgrp - The name of the capacity group for which the print location is being set.
+    ' overwrite - An optional boolean indicating whether to overwrite the current print location.
+    Dim range_name As String
+    range_name = capgrp & "_input_print_location"
+    
+    If overwrite Or r.get_range(range_name).Cells(2, 2).value = "" Then
+        r.get_range(range_name).Cells(2, 2).value = capgrp & "_planning.pdf"
+    End If
+End Sub
+
+
+
 ' This subroutine sets default values for capgrp sheet inputs weeknumber and year
-Sub set_capgrp_default_inputs(capgrp_sheet As String)
+Sub set_default_weeknumber_year(capgrp_sheet As String)
 
  Dim current_prodwk As Integer, current_year As Integer, new_prodwk As Integer
  ' Get first new_prodwk from ISAH INPUT
@@ -1453,7 +1692,7 @@ capgrp = "INPK"
     startDate = get_capgrp_startdate(capgrp)
 start_end_times = calculate_start_end_times(capgrp, startDate, dbg:=True)
 
-Debug.Print a.num_array_rows(start_end_times)
+Debug.Print a.numArrayRows(start_end_times)
 
 End Sub
 
@@ -1475,11 +1714,11 @@ Function calculate_start_end_times(capgrp As String, startDate As Date, Optional
     ' get the duration, articles array and create empty array for the calculated startdates `startdates_out`
     duration_arr = a.get_array_column(ord, dur_index)
     articles_arr = a.get_array_column(ord, art_index)
-    startdates_out = a.create_array(a.num_array_rows(ord), 1)
+    startdates_out = a.create_array(a.numArrayRows(ord), 1)
     
     'get the first starttime from the workdaytimes array (wdt)
     Dim startTime As Double, endtime As Double
-    jT = a.num_array_rows(wdt)
+    jT = a.numArrayRows(wdt)
     startTime = wdt(1, 1)
     
     ' create empty start_end_times array
@@ -1671,7 +1910,9 @@ Public Sub clear_all_capgrp_sheets()
     ' clear capgrp sheets
     For Each capgrp_sheet0 In main.get_capgrp_sheet_names()
         capgrp_sheet = CStr(capgrp_sheet0)
-        Debug.Print "clearing capgrp sheet:", capgrp_sheet
+        If main.P_DEBUG Then
+           Debug.Print "clearing capgrp sheet:", capgrp_sheet
+        End If
         main.clear_orders_range CStr(capgrp_sheet)
         Set worktimes_range = get_worktimes_values_range(capgrp_sheet)
         worktimes_range.Cells.value = 1
@@ -1724,10 +1965,11 @@ Sub update_orders_range(capgrp As String)
        Debug.Print "named range does not exist, create: " & range_name
        main.init_orders_range capgrp, range_name, False
     End If
+    'Exit Sub
     
     ' 2 clear orders range, set the default capgrp inputs and copy selected orders and refit orders range to copied values
     main.clear_orders_range capgrp
-    main.set_capgrp_default_inputs capgrp
+    main.set_default_weeknumber_year capgrp
     main.copy_selected_orders capgrp, clear_ws:=False, remove_filter:=True
     main.fit_order_range_to_values capgrp
     
@@ -1737,35 +1979,18 @@ Sub update_orders_range(capgrp As String)
     ' fit named range to include new columns
     main.fit_order_range_to_values capgrp
     Set rng1 = r.get_range(range_name, wb:=wb0)
+    Set ws0 = rng1.Worksheet
+    
+    ' insert `volgnummer`
+    insert_volgnummer_into_orders capgrp
     
     If rng1.Rows.count <= 1 Then
        Debug.Print "update_orders_range: no orders found for capgrp: `" & capgrp & "`"
        Exit Sub
     End If
     
-    ' insert `volgnummer`
-    insert_volgnummer_into_orders capgrp
-    
     ' 3 sort on bulkcode and color formatting bulkcode column
     r.sort_range_by_columns rng1, main.BULKCODE_COLUMN
-    
-    ' general formatting
-    Set ws0 = rng1.Worksheet
-    If rng1.Rows.count > 1 Then
-        Dim i As Long
-        ws0.Activate
-        formats_array = str.str_to_array(main.OUTPUT_DATA_FORMATS)
-        For i = LBound(formats_array) To UBound(formats_array)
-            rng1.columns(i + 1).Select
-            With Selection
-            .NumberFormat = formats_array(i)
-            .HorizontalAlignment = xlCenter
-            End With
-        Next i
-        
-        ' color formatting
-        main.update_orders_color_format capgrp
-    End If
     
     ' 4.1 update start end times if orders are not empty
     If rng1.Rows.count > 1 Then
@@ -1780,13 +2005,11 @@ Sub update_orders_range(capgrp As String)
        main.update_orders_columns_width capgrp
     End If
     
-    ' 5 move buttons to address
-    ctr.move_button "btn_update_isah_data_" & capgrp, main.BTN_UPDATE_ISAH_ADDRESS, ws0, left_offset:=0.25 * main.BTN_WIDTH
-    ctr.move_button "btn_add_record_" & capgrp, main.BTN_ADD_RECORD_ADDR, ws0, left_offset:=0.25 * main.BTN_WIDTH
-    ctr.move_button "btn_delete_record_" & capgrp, main.BTN_DELETE_RECORD_ADDR, ws0, left_offset:=0.25 * main.BTN_WIDTH
-    ctr.move_button "btn_print_dates_" & capgrp, main.BTN_PRINT_DATES_ADDR, ws0, left_offset:=0.25 * main.BTN_WIDTH
-    ctr.move_button "btn_calculate_dates_" & capgrp, main.BTN_CALCULATE_DATES_ADDR, ws0, left_offset:=0
-    ctr.move_button "btn_restore_prev_state_" & capgrp, main.BTN_RESTORE_PREV_STATE_ADDR, ws0, left_offset:=0
+    ' 5 position buttons
+    main.position_buttons capgrp
+     
+    ' 5.1 format Starttijd, Eindtijd + general formatting
+    main.format_orders_range capgrp, rng1
     
     ' 6 update sorting on BULK if times change on capgrp sheet
     main.update_bulk_sorting
@@ -1798,6 +2021,51 @@ Sub update_orders_range(capgrp As String)
     End If
     
     Exit Sub
+End Sub
+
+Sub format_orders_range(capgrp As String, Optional orders_rng As Range = Nothing)
+    If orders_rng Is Nothing Then
+       Set orders_rng = main.get_orders_range(capgrp)
+    Else
+       Set orders_rng = orders_rng 'performance
+    End If
+    
+    r.formatRangeColumns orders_rng, main.ORDERS_RANGE_COLUMN_FORMATS
+    Dim i As Long
+    If orders_rng.Rows.count > 1 Then
+        For i = 1 To orders_rng.columns.count
+            With orders_rng
+            .HorizontalAlignment = xlCenter
+            End With
+        Next
+        
+        ' color formatting
+        main.update_orders_color_format capgrp
+    End If
+    
+    Exit Sub
+    
+End Sub
+
+Sub update_orders_range_formulas(capgrp As String, Optional orders_rng As Range = Nothing)
+    Dim rng1 As Range
+    If orders_rng Is Nothing Then
+       Set rng1 = main.get_orders_range(capgrp)
+    Else
+       Set rng1 = orders_rng 'performance
+    End If
+
+    If rng1.Rows.count > 1 Then
+       main.update_start_end_times capgrp
+       ' 202307 4.2 20 insert the #pallets formula
+       main.insert_number_of_pallets_formula capgrp
+       
+       ' 20240209 fill firt row of columns Tank, L/O
+       main.add_tank_lo_columns capgrp
+
+       ' column/row formatting
+       main.update_orders_columns_width capgrp
+    End If
 End Sub
 
 Function get_orders_range_name(capgrp_name As String) As String
@@ -1873,7 +2141,7 @@ Sub insert_number_of_pallets_formula(capgrp As String)
         
         ' Fill the formula formulaTemplateString in the newly inserted column
         Dim formulaDefinition As String, formulaRange As Range
-        formulaTemplateString = "=CEILING(@2/VLOOKUP(@1,@3,3,FALSE),1)"
+        formulaTemplateString = "=IF(@1="""","""",CEILING(@2/VLOOKUP(@1,@3,3,FALSE),1))"
         
         formulaDefinition = str.subInStr(formulaTemplateString, address, qty_address, main.NUMBER_PER_PALLET_NAMED_RANGE)
         Set formulaRange = rng.columns(numberOfPalletsIndex)
@@ -1887,17 +2155,18 @@ Sub insert_number_of_pallets_formula(capgrp As String)
 End Sub
 
 Sub insert_record(capgrp As String)
-    Dim rng0 As Range, ws As Worksheet, range_name As String, abs_row As Long
-    Dim active_row As Range
+    Dim orders_rng As Range, ws As Worksheet, range_name As String, abs_row As Long
+    Dim active_row As Range, offset_row As Range, new_orders_range As Range
     range_name = capgrp & "_orders"
     abs_row = CLng(ActiveCell.row)
     
-    Set rng0 = r.get_range(range_name)
-    Set ws = rng0.Worksheet
+    Set orders_rng = r.get_range(range_name)
+    Set offset_row = r.safe_offset(orders_rng.Rows(orders_rng.Rows.count), 1)
+    Set ws = orders_rng.Worksheet
     
-    If Not Intersect(rng0, ActiveCell) Is Nothing And abs_row > 1 Then
+    If Not Intersect(orders_rng, ActiveCell) Is Nothing And abs_row > 1 Then
         ' don't insert when on the header row
-        If rng0.Cells(1, 1).row = ActiveCell.row Then
+        If orders_rng.Cells(1, 1).row = ActiveCell.row Then
            Exit Sub
         End If
         Set active_row = main.get_row_in_named_range(range_name, abs_row)
@@ -1905,8 +2174,25 @@ Sub insert_record(capgrp As String)
         'Insert the record into the named range
         active_row.Insert shift:=xlDown
         
-        'Update the named range to include the new row
-        'r.update_named_range range_name, r.getResizedRange(rng0, add_rows:=1)
+        ' Update capgrp formulas
+        main.update_orders_range_formulas capgrp, orders_rng
+        
+        ' general formatting
+        main.format_orders_range capgrp
+        
+        ' Recalculate volgnummers
+        main.calculate_volgnummer capgrp
+        
+    ElseIf Not Intersect(offset_row, ActiveCell) Is Nothing Then
+        ' combine current range with offset row
+        Set new_orders_range = Range(orders_rng.address, offset_row.address)
+        r.update_named_range range_name, new_orders_range
+        
+        ' Update capgrp formulas
+        main.update_orders_range_formulas capgrp, new_orders_range
+        
+        ' general formatting
+        main.format_orders_range capgrp
         
         ' Recalculate volgnummers
         main.calculate_volgnummer capgrp
@@ -1952,7 +2238,9 @@ Sub update_orders_color_format(capgrp As String)
     Set rng1 = r.get_column_values(rng0, main.BULKCODE_COLUMN)
     If Not rng1 Is Nothing Then
         Set unique_bulkcodes = a.as_collection(r.get_unique_vals(rng1))
-        fill_bulkcode_color rng1, unique_bulkcodes
+        If unique_bulkcodes.count > 0 Then
+           fill_bulkcode_color rng1, unique_bulkcodes
+        End If
     End If
 End Sub
 
@@ -1964,6 +2252,10 @@ Sub update_orders_columns_width(capgrp As String)
 
    'set widths of columns Tank, L/O to `TANK_LO_COLUMN_WIDTH`
    r.get_column(rng0, "Tank").ColumnWidth = main.TANK_LO_COLUMN_WIDTH
+   rng0.columns(1).ColumnWidth = Round(main.COLUMN_AB_WIDTH / 5.6, 0)
+   rng0.columns(2).ColumnWidth = Round(main.COLUMN_AB_WIDTH / 5.6, 0)
+   rng0.columns(3).ColumnWidth = Round(main.COLUMN_CD_WIDTH / 5.6, 0)
+   rng0.columns(4).ColumnWidth = Round(main.COLUMN_CD_WIDTH / 5.6, 0)
    'r.get_column(rng0, "L/O").ColumnWidth = main.TANK_LO_COLUMN_WIDTH => autofit is better bsc of first cell of column F
     
 End Sub
@@ -2057,14 +2349,14 @@ Function get_random_color_palette(n_colors As Integer) As collection
     Set get_random_color_palette = color_palette
 End Function
 
-Function get_random_color_indices(n As Integer) As collection
+Function get_random_color_indices(N As Integer) As collection
     Dim colorIndices As New collection
     Dim randNum As Integer
     Dim i As Integer
     Dim j As Integer
     Dim isExists As Boolean
 
-    For i = 1 To n
+    For i = 1 To N
         Do
             ' Generate a random number from 2 to 56
             randNum = Int((56 - 2 + 1) * Rnd + 2)
@@ -2133,13 +2425,13 @@ End Function
 Sub test_get_color_index_light()
     Dim color_indices As collection
     integers = a.create_integer_vector(1, 100)
-    Set color_indices = main.get_color_indices_light(n:=100)
-    For i = 1 To 100
-    Debug.Print i, color_indices.item(i)
-    Next i
+    Set color_indices = main.get_color_indices_light(N:=100)
+    'For i = 1 To 100
+       'Debug.Print i, color_indices.item(i)
+    'Next i
 End Sub
 
-Function get_color_indices_light(n As Integer, Optional skip_numbers As Variant) As collection
+Function get_color_indices_light(N As Integer, Optional skip_numbers As Variant) As collection
     Dim i As Integer, j As Integer
     Dim output As New collection
     
@@ -2155,7 +2447,7 @@ Function get_color_indices_light(n As Integer, Optional skip_numbers As Variant)
     
     'Loop from 1 to n
     j = 1
-    For i = 1 To n
+    For i = 1 To N
         j = j Mod 56
         'Check if j is in skip_numbers and adjust accordingly
         Do While a.array_contains(skip_numbers, j)
@@ -2170,7 +2462,7 @@ Function get_color_indices_light(n As Integer, Optional skip_numbers As Variant)
     
     'Check if the length of the output collection equals n
     Debug.Print output.count
-    If output.count <> n Then
+    If output.count <> N Then
         Err.Raise 9999, , "The output collection length does not equal to n."
     End If
     
@@ -2195,6 +2487,11 @@ Sub fill_bulkcode_color(rng As Range, codes As collection)
         count = count + 1
     Next code
 End Sub
+
+' ISAH NIEUW ORDERS
+Function get_new_orders_range() As Range
+    Set get_new_orders_range = r.get_range(ThisWorkbook.Sheets(main.ISAH_NEW_ORDERS_SHEET_NAME))
+End Function
 
 ' ISAH DATABASE EXPORT
 
@@ -2349,7 +2646,7 @@ Sub isah_export_stage_orders()
     ' append all capgrp order ranges and paste columns `ISAH_STAGING_COLUMNS` to sheet `ISAH_STAGING_SHEET_NAME`
     ' first get named ranges of orders
     Set capgrp_sheets = main.get_capgrp_sheet_names()
-    Dim r0 As Integer, n As Long, orders_arr_all As Variant, ws0 As Worksheet
+    Dim r0 As Integer, N As Long, orders_arr_all As Variant, ws0 As Worksheet
     Dim columns_to_select As Variant, orderNrCapgrp As String, weekNr As Integer, capgrp As String
       
     'parameters
@@ -2360,13 +2657,13 @@ Sub isah_export_stage_orders()
     Set ws0 = wb0.Worksheets(main.ISAH_STAGING_SHEET_NAME)
     w.clearWorksheet ws0, wb0
     arrForProductieOrder = main.get_isah_input_range()
-
+    
     ' append all capgrp order ranges to array `orders_arr_all`
-    n = 1
+    N = 1
     For Each c In capgrp_sheets
         capgrp = c
         orders_arr = main.get_orders_range(capgrp)
-        r0 = a.num_array_rows(orders_arr) 'number of rows of current capgrp
+        r0 = a.numArrayRows(orders_arr) 'number of rows of current capgrp
         If (r0 < 2) Then
             GoTo next_capgrp_sheet
         End If
@@ -2379,7 +2676,7 @@ Sub isah_export_stage_orders()
         
         ' if CAPGRP = "INPAK" then get the right Cap.Grp
         If capgrp = "INPAK" Then
-           If a.num_array_rows(orders_arr) > 0 Then
+           If a.numArrayRows(orders_arr) > 0 Then
            
               orders_arr = a.AppendColumn(orders_arr, "", main.ISAH_STAGING_CAGGRP_COLUMN)
               cl_index = a.FindArrayColumnIndex(orders_arr, "ProdHeaderOrdNr")
@@ -2416,15 +2713,20 @@ nx_i:
         End If
          
         ' append to `orders_arr_all`
-        If n = 1 Then
+        If N = 1 Then
            orders_arr_all = orders_arr
         Else
            orders_arr_values = a.resize_array(orders_arr, r0:=2)
            orders_arr_all = a.concatArrays(orders_arr_all, orders_arr_values)
         End If
-        n = n + 1
+        N = N + 1
 next_capgrp_sheet:
     Next
+    
+    If a.numArrayRows(orders_arr_all) <= 1 Then
+       MsgBox "No orders on sheet"
+       Exit Sub
+    End If
     
     ' in result array `orders_arr_all`, filter out all rows where ProdHeaderOrdNr does not match pattern ^\\d (starts with digit)
     OrdersHeaderArray = a.get_array_row(orders_arr_all, 1)
@@ -2435,7 +2737,7 @@ next_capgrp_sheet:
     
     ' paste array `orders_arr_all` and create named range `main.ISAH_STAGING_RANGE_NAME`
     a.paste_array OrdersWithOrdNrArray, "A1", ws0
-    r1 = a.num_array_rows(OrdersWithOrdNrArray)
+    r1 = a.numArrayRows(OrdersWithOrdNrArray)
     c1 = a.num_array_columns(OrdersWithOrdNrArray)
     Set rng0 = ws0.Range(r.get_range_address(ws0, 1, r1, 1, c1))
     r.create_named_range main.ISAH_STAGING_RANGE_NAME, ws0.name, "A1", clear:=False
@@ -2450,20 +2752,13 @@ next_capgrp_sheet:
         r.add_named_range_column ordersRangeName, CStr(colName)
     Next
     
-    'set column formats
-    Dim ordersRange As Range: Set ordersRange = r.get_range(main.ISAH_STAGING_RANGE_NAME, wb:=wb0)
-    Dim columnRange As Range
-    columnsArray = Split(main.ISAH_STAGING_UPDATE_COLUMNS, ";")
-    columnFormatsArray = Split(main.ISAH_STAGING_UPDATE_COLUMNS_FORMATS, ";")
-    For i = LBound(columnsArray) To UBound(columnsArray)
-       colName = columnsArray(i)
-       colFormat = columnFormatsArray(i)
-       Set columnRange = r.get_column(ordersRange, colName, wb:=wb0)
-       columnRange.NumberFormat = colFormat
-    Next i
+    'set worksheet column formats
+    w.formatWorksheetColumns ws0, main.ISAH_STAGING_UPDATE_COLUMNS_FORMATS
     
     'autofit columns
     ws0.columns.AutoFit
+    
+    Exit Sub
     
 End Sub
 
@@ -2592,11 +2887,6 @@ Sub isah_export_update_prodboo_grp()
         newQty = a.getColumnValue(ordersRangeArray, i, "Qty")
         calcDur = a.getColumnValue(ordersRangeArray, i, "Duur")
         
-        'TODO FIX: EXCEPTION for CAPGRP="INPAK"
-        'If newMachGrpCode = "INPAK" Then
-        '   GoTo nx_i
-        'End If
-                 
         If newQty <= 0 Then
            GoTo nx_i
         End If
@@ -2643,28 +2933,28 @@ nx_i:
     Next i
 
     ' connect to database and execute sqlStatements
-    Dim conn0 As ADODB.Connection
-    Set conn0 = main.getISAHconnection()
+    Dim conn As ADODB.Connection
+    Set conn = main.getISAHconnection()
     
     c = 0
     ' connection management: make sure to close connections on error
-    ' On Error GoTo close_connection
+    On Error GoTo close_connection
     ' transaction management
-    conn0.BeginTrans
+    conn.BeginTrans
     
     On Error GoTo TransactionError ' Set up error handling
     
     For Each stat In sqlStatements
-       conn0.Execute CStr(stat)
+       conn.Execute CStr(stat)
        c = c + 1
     Next
-    conn0.CommitTrans
-    
-    On Error GoTo no_error
+    conn.CommitTrans
+    On Error GoTo 0
+    GoTo no_error
 
 'errorhandler
 TransactionError:
-    cn.RollbackTrans
+    conn.RollbackTrans
     If main.P_DEBUG Then
        Debug.Print "Transaction failed, updates have been rolled back"
     End If
@@ -2673,11 +2963,11 @@ close_connection:
     If main.P_DEBUG Then
        Debug.Print "Database error executing: " & stat
     End If
-    conn0.Close
+    conn.Close
     Err.Raise Err
     
 no_error:
-    conn0.Close
+    conn.Close
     
 End Sub
 
@@ -2798,11 +3088,8 @@ Sub isah_export_update_prodheader()
     table_suffix = "_header"
     select_check_columns_list = "LTRIM(RTRIM(ProdHeaderOrdNr)) as ProdHeaderOrdNr, StartDate AS next_StartDate_header, EndDate AS next_EndDate_header"
     
-    ' thisworkbook as wb0
-    Set wb0 = ThisWorkbook
-    
-    ' Connect to this workbook
-    Set wbconn = db.openExcelConn(ThisWorkbook)
+    ' Get the global connection or connect to this workbook
+    Set wbconn = main.getWorkbookConnection()
     
     ' Query from table "EXPORT_ISAH" where `match_prod_header`=1
     sql_template = "SELECT @1 FROM [@2] WHERE @3;"
@@ -2811,42 +3098,53 @@ Sub isah_export_update_prodheader()
     match_orders_array = db.RecordSetToArray(rs0)
     
     ' Check orders to match, if array is empty then exit sub
-    If a.num_array_rows(match_orders_array) <= 1 Then
+    If a.numArrayRows(match_orders_array) <= 1 Then
        Debug.Print "No EXPORT_ISAH records with match_prod_header=1 found"
        ' Close connection to this workbook
-       wbconn.Close
+       'wbconn.Close
        Exit Sub
     End If
     
     ' Create SQL update statement using `ProdHeaderOrdNr` as key column and `StartDate`, `EndDate` as update columns
-    update_statements = db.sqlUpdateStatement(rs0, table_name_isah, set_columns, key_columns, mssql)
-    Debug.Print update_statements
+    'update_statements = db.sqlUpdateStatement(rs0, table_name_isah, set_columns, key_columns, mssql)
+    update_statements = db.sqlUpdateCaseStatement(rs0, table_name_isah, set_columns, key_columns, mssql)
+    If main.P_DEBUG Then
+       Debug.Print update_statements
+    End If
     
     ' Create query statement `sql1` to select columns from `rs0` where `match_prod_header`=1
     orderNumbers = a.resize_array(a.get_array_column(match_orders_array, 1), r0:=2)
     wherecondition = db.sqlWhereInCondition(orderNumbers, main.ISAH_DATABASE_ORDERNR_COLUMN, mssql)
     sql1 = str.subInStr("SELECT @1 FROM @2 @3;", select_check_columns_list, table_name_isah, wherecondition)
-    Debug.Print sql1
+    If main.P_DEBUG Then
+       Debug.Print sql1
+    End If
     
-    ' Close connection to this workbook
-    wbconn.Close
-    
-On Error GoTo close_connection
+'On Error GoTo close_connection
     ' Open connection to ISAH database
     Set sqlconn = main.getISAHconnection()
     
+    ' Begin transaction
+    sqlconn.BeginTrans
+    
     ' Execute SQL update statements
-    db.executeSqlStatements sqlconn, update_statements, db.MSSQL_LINE_BREAK
+    db.executeSqlStatements sqlconn, update_statements, db.MSSQL_LINE_BREAK, False, False
+    
+    ' Commit transaction
+    sqlconn.CommitTrans
     
     ' Query from `sqlconn` and store result as array `result_array`
     result_array = db.RecordSetToArray(db.queryDB(sqlconn, sql1))
     
     ' Close connection to ISAH database
     sqlconn.Close
-On Error GoTo 0
-    GoTo no_error
+    
+GoTo no_error
     
 close_connection:
+    ' Rollback transaction in case of error
+    sqlconn.RollbackTrans
+    
     ' Close connection to ISAH database
     sqlconn.Close
     Err.Raise Err
@@ -2923,11 +3221,8 @@ Sub isah_export_update_prodboo()
     table_name_isah = main.getISAHprodboo()
     table_suffix = "_boo"
     
-    ' thisworkbook as wb0
-    Set wb0 = ThisWorkbook
-    
-    ' Connect to this workbook
-    Set wbconn = db.openExcelConn(ThisWorkbook)
+    ' Get the global connection or connect to this workbook
+    Set wbconn = main.getWorkbookConnection()
     
     ' Query from sheet "EXPORT_ISAH" where `match_prod_boo`=1
     sql_template = "SELECT @1 FROM [@2] WHERE @3;"
@@ -2937,16 +3232,17 @@ Sub isah_export_update_prodboo()
     match_dossiercode_capgrp_array = db.RecordSetToArray(rs0)
     
     ' Check dossiercodes, capgrp to match, if array is empty then exit sub
-    If a.num_array_rows(match_dossiercode_capgrp_array) <= 1 Then
+    If a.numArrayRows(match_dossiercode_capgrp_array) <= 1 Then
         Debug.Print "No EXPORT_ISAH records with match_prod_boo=1 found"
-        ' Close connection to this workbook
-        wbconn.Close
         Exit Sub
     End If
     
     ' Create SQL update statement using `ProdHeaderOrdNr` as key column and `StartDate`, `EndDate` as update columns
-    update_statements = db.sqlUpdateStatement(rs0, table_name_isah, set_columns, key_columns, mssql, force_string:=True)
-    Debug.Print update_statements
+    'update_statements = db.sqlUpdateStatement(rs0, table_name_isah, set_columns, key_columns, mssql, force_string:=True)
+    update_statements = db.sqlUpdateCaseStatement(rs0, table_name_isah, set_columns, key_columns, mssql, force_string:=True)
+    If main.P_DEBUG Then
+       Debug.Print update_statements
+    End If
     
     ' Create query statement `sql_check_columns` to select columns from `rs0` where `match_prod_header`=1
     Dim sql_check_columns As String
@@ -2974,21 +3270,25 @@ Sub isah_export_update_prodboo()
     wherecondition = clls.collectionToString(where_values_col, " OR ")
     sql_check_columns = str.subInStr("SELECT DISTINCT @1 FROM @2 WHERE @3;", select_check_columns_list, table_name_isah, wherecondition)
     
-    ' Close connection to this workbook
-    wbconn.Close
-     
 On Error GoTo close_connection
     ' Open connection to ISAH database
     Set sqlconn = main.getISAHconnection()
     
+    ' Begin transaction
+    sqlconn.BeginTrans
+    
     ' Execute SQL update statements
-    db.executeSqlStatements sqlconn, update_statements, db.MSSQL_LINE_BREAK
+    db.executeSqlStatements sqlconn, update_statements, db.MSSQL_LINE_BREAK, False, False
+    
+    ' Commit transaction
+    sqlconn.CommitTrans
     
     ' Query `sql_check_columns` from `sqlconn` and store result as array `ProdBOOArray`
     ProdBOOArray = db.RecordSetToArray(db.queryDB(sqlconn, sql_check_columns))
     If main.P_DEBUG Then
        a.printArray ProdBOOArray
     End If
+    
     ' Close connection to ISAH database
     sqlconn.Close
     
@@ -2996,6 +3296,9 @@ On Error GoTo close_connection
     GoTo no_error
     
 close_connection:
+    ' Rollback transaction in case of error
+    sqlconn.RollbackTrans
+    
     ' Close connection to ISAH database
     sqlconn.Close
     Err.Raise Err
@@ -3074,9 +3377,10 @@ Sub isah_export_update_prodbom()
     target_table = main.getISAHprodbom()
     
     ' Query the distinct values of 'ProdHeaderDossierCode' and 'Startdate_header' from the source table
-    Dim xlsconn As New ADODB.Connection
+    Dim wbconn0 As New ADODB.Connection
+    Set wbconn0 = main.getWorkbookConnection()
     sql0 = "SELECT DISTINCT Cstr(ProdHeaderDossierCode) AS ProdHeaderDossierCode, next_StartDate_header AS RequiredDate FROM [" & source_table & "$] WHERE ProdHeaderDossierCode IS NOT NULL AND Startdate_header IS NOT NULL"
-    Set rs0 = db.queryFromWorkbook(sql0, xlsconn)
+    Set rs0 = db.queryDB(wbconn0, sql0)
 
     If db.RecordSetNumberRecords(rs0) = 0 Then
        Debug.Print "isah_export_update_prodbom: ISAH_EXPORT has no valid ProdHeaderDossierCode RequiredDate to update in ISAH"
@@ -3088,7 +3392,8 @@ Sub isah_export_update_prodbom()
     key_columns = "ProdHeaderDossierCode"
     
     ' Construct the SQL update statements and add them to the collection
-    update_statements = db.sqlUpdateStatement(rs0, target_table, set_columns, key_columns, mssql)
+    ' update_statements = db.sqlUpdateStatement(rs0, target_table, set_columns, key_columns, mssql)
+    update_statements = db.sqlUpdateCaseStatement(rs0, target_table, set_columns, key_columns, mssql)
     
     ' Initialize the collection to store SQL update statements
     Set updateStatements = str.stringToCol(update_statements, ";")
@@ -3103,24 +3408,33 @@ Sub isah_export_update_prodbom()
     ' clean up
     rs0.Close
     Set rs0 = Nothing
-    xlsconn.Close
-    Set xlsconn = Nothing
     
     ' Update ISAH table BOM
     Dim conn As ADODB.Connection
     
 On Error GoTo close_connection
     Set conn = main.getISAHconnection()
+    
+    ' Begin transaction
+    conn.BeginTrans
+    
     For Each sqlUpdate In updateStatements
         db.executeSql conn, CStr(sqlUpdate)
     Next sqlUpdate
+    
+    ' Commit transaction
+    conn.CommitTrans
     
 On Error GoTo 0
 GoTo no_error
   
 close_connection:
+    ' Rollback transaction in case of error
+    conn.RollbackTrans
     ' Close connection to ISAH database
-    Debug.Print "Database error: " & sqlUpdate
+    If main.P_DEBUG Then
+       Debug.Print "Database error: " & sqlUpdate
+    End If
     conn.Close
     Set conn = Nothing
     Err.Raise Err
@@ -3135,50 +3449,77 @@ End Sub
 Sub isah_export_check_bom_dates()
 
     ' 1. get ProdBillOfMat checks from ISAH, write to sheet main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET
-    Dim conn0 As ADODB.Connection, sql0 As String
-    sql0 = main_isah_queries.check_ProdBillOfMat(main.getISAHprodbom())
-    Set conn0 = main.getISAHconnection()
-    db.writeQueryToSheet conn0, sql0, main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET, main.CHECK_BOM_REQUIRED_DATE_SHEET_COLUMNS_MAP
-    conn0.Close
+    Dim wbconn0 As ADODB.Connection, conn As ADODB.Connection, sql0 As String, prodHeaderDossierCodeValuesList As String
+    
+    Set wbconn0 = main.getWorkbookConnection()
+    sql0 = str.subInStr("SELECT DISTINCT ProdHeaderDossierCode FROM [@1$]", main.ISAH_STAGING_SHEET_NAME)
+    prodHeaderDossierCodeValues = a.toVector(db.RecordSetToArray(db.queryDB(wbconn0, sql0)))
+    prodHeaderDossierCodeValuesList = db.toSqlList(prodHeaderDossierCodeValues, force_string:=True)
+    
+    sql0 = main_isah_queries.check_ProdBillOfMat(bom_table_name:=main.getISAHprodbom(), _
+                                                 prodheader_dossier_code_list:=prodHeaderDossierCodeValuesList _
+                                                )
+    
+    
+    Set conn = main.getISAHconnection()
+    db.writeQueryToSheet conn, sql0, main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET, main.CHECK_BOM_REQUIRED_DATE_COLUMNS_FORMATS, write_empty_records:=True
+    conn.Close
+    
+    w.formatWorksheetColumns ThisWorkbook.Sheets(main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET), main.CHECK_BOM_REQUIRED_DATE_COLUMNS_FORMATS
     
 End Sub
 
-Sub isah_export_match_bom_dates()
 
+Sub isah_export_match_bom_dates()
     ' 2. join with ISAH_EXPORT with ISAH_CHECK_BOM_REQUIRED_DATE_SHEET, add check column and write to ISAH_MATCH_BOM_REQUIRED_DATE_SHEET
-    Dim conn0 As ADODB.Connection, sql0 As String, rs0 As ADODB.Recordset, rng0 As Range
-    sql0 = join_ISAH_EXPORT_CHECK_PROD_BOM()
+    Dim rng0 As Range
     
     ' check if table main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET has actually been filled
     Set rng0 = ThisWorkbook.Sheets(main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET).Cells(1, 1)
-    If rng0.value = "" Then
+    Set rng0 = r.expand_range(rng0)
+
+    If rng0.Rows.count <= 1 Then
        Debug.Print str.subInStr("Sheet not filled: @1", main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET)
-       Exit Sub
+       'Exit Sub
     End If
+        rng0.Activate
+
+GoTo check_range
+    Dim wbconn0 As ADODB.Connection, sql0 As String, rs0 As ADODB.Recordset
+    Set wbconn0 = main.getWorkbookConnection()
+    sql0 = join_ISAH_EXPORT_CHECK_PROD_BOM()
+    db.writeQueryToSheet wbconn0, sql0, main.ISAH_MATCH_BOM_REQUIRED_DATE_SHEET
     
-    Set conn0 = db.openExcelConn(ThisWorkbook)
-    db.writeQueryToSheet conn0, sql0, main.ISAH_MATCH_BOM_REQUIRED_DATE_SHEET
-    
+check_range:
     ' append column `check_bom_required_date` to EXPORT_ISAH
     Dim checkRange As Range, IsahExportRange As Range, checkColumn As Range
-    Set checkRange = r.expand_range("A1", ThisWorkbook.Sheets(main.ISAH_MATCH_BOM_REQUIRED_DATE_SHEET))
-    Set checkColumn = r.get_column(checkRange, "check_bom_required_date", offset_row:=1)
+    Set checkRange = r.expand_range("A1", ThisWorkbook.Sheets(main.ISAH_CHECK_BOM_REQUIRED_DATE_SHEET))
+    
+    If checkRange.Rows.count <= 1 Then
+    Set checkColumn = r.get_column(checkRange, "max_bom_required_date")
+    Else
+    Set checkColumn = r.get_column(checkRange, "max_bom_required_date", offset_row:=1)
+    End If
     checkColumnIndex = checkColumn.column
     
-    ' Append checkColumn values to IsahExportRange
-    values = checkColumn
+    ' Add check column to ISAH_EXPORT
     Set IsahExportRange = main.get_isah_export_range()
-    r.AppendColumnToRange IsahExportRange, "check_bom_required_date", values
-    
+    r.AppendColumnToRange IsahExportRange, "check_bom_required_date" ', values
     Set IsahExportRange = main.get_isah_export_range()
     Set checkColumn = r.get_column(IsahExportRange, "check_bom_required_date")
     
-    ' Fill the formula formulaTemplateString in the newly inserted column
-    Dim formulaDefinition As String, formulaRange As Range, lookupColumnAddress As String, lookupRangeAddress As String
-    formulaTemplateString = "=VLOOKUP(@1,@2,@3,FALSE)"
-    lookupColumnAddress = Replace(IsahExportRange.Cells(2, 1).address, "$", "")
+    ' Match CHECK_PROD_BILL_OF_MAT.max_bom_required_date against ISAH_EXPORT.StartDate_header
+    ProdHeaderDossierCodeColumnIndex = r.get_column(IsahExportRange, "ProdHeaderDossierCode").column
+    StartDateColumnIndex = r.get_column(IsahExportRange, "next_StartDate_header").column
+
+    ' Fill the formula formulaTemplateString in the newly added column
+    Dim formulaDefinition As String, formulaRange As Range, lookupColumnAddress As String, lookupRangeAddress As String, StartDateColumnAddress As String
+    formulaTemplateString = "=IF(VLOOKUP(@1,@2,@3,FALSE)=@4,1,0)"
+    lookupColumnAddress = Replace(IsahExportRange.Cells(2, ProdHeaderDossierCodeColumnIndex).address, "$", "")
     lookupRangeAddress = r.getRangeFullAddress(checkRange, removeFileName:=True, removeDollarSigns:=False)
-    formulaDefinition = str.subInStr(formulaTemplateString, lookupColumnAddress, lookupRangeAddress, checkColumnIndex)
+    StartDateColumnAddress = Replace(IsahExportRange.Cells(2, StartDateColumnIndex).address, "$", "")
+    formulaDefinition = str.subInStr(formulaTemplateString, lookupColumnAddress, lookupRangeAddress, checkColumnIndex, StartDateColumnAddress)
+    
     Set formulaRange = checkColumn
     If formulaRange.Rows.count > 1 Then
        Set formulaRange = formulaRange.Offset(1, 0).Resize(formulaRange.Rows.count - 1, 1)
@@ -3194,46 +3535,50 @@ Sub isah_export_match_bom_dates()
 End Sub
 
 Public Sub isah_export_run_all()
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Dim wbconn As ADODB.Connection
     Dim t As Timer
     Set t = New Timer
+    
+    ' initialize the global connection to thisworkbook, needed below
+    Set wbconn = main.getWorkbookConnection()
+    
+    t.Start ' Start the timer
     
     ' prepare the staging sheet `EXPORT_ISAH` using capgrp sheets
     main.isah_export_stage_orders
     
-    t.Start ' Start the timer
-    
-    ' connect to ISAH database and update the MachGrpCode, Qty and StandCapacity in `ProdBillOfOperation`
+    ' connect to ISAH database and update the MachGrpCode, Qty and StandCapacity in `ProdBillOfOperation` => 0.1 sec
     main.isah_export_update_prodboo_grp
-    
-    Debug.Print t.StopTimer 'Stop the timer
-    
-    Exit Sub
 
-    ' connect to ISAH database and match orders to dossier in `ProdHeader` table
+    ' connect to ISAH database and match orders to dossier in `ProdHeader` table, 0 sec (?)
     main.isah_export_match_prodheader
-    
-    ' connect to ISAH database and match dossiers in `ProdBillOfOperation` table
+
+    ' connect to ISAH database and match dossiers in `ProdBillOfOperation` table,  0.1 sec
     main.isah_export_match_prodboo
-    
-    ' update StartTime, EndTime in `ProdHeader` table
+
+    ' update StartTime, EndTime in `ProdHeader` table, 1.2 sec
     main.isah_export_update_prodheader
-    
-    ' update StartTime, EndTime in `ProdBillOperation` table
+
+    ' update StartTime, EndTime in `ProdBillOperation` table, 1 sec
     main.isah_export_update_prodboo
-    
-    ' update RequiredDate in `ProdBillOfMat` table
+
+    ' update RequiredDate in `ProdBillOfMat` table, 1 sec
     main.isah_export_update_prodbom
-    
-    ' check RequiredDate in `ProdBillOfMat` table
+
+    ' check RequiredDate in `ProdBillOfMat` table, 1 sec
     main.isah_export_check_bom_dates
     main.isah_export_match_bom_dates
-        
-End Sub
 
-Sub test_()
-    ' check RequiredDate in `ProdBillOfMat` table
-    main.isah_export_check_bom_dates
-    'main.isah_export_match_bom_dates
+    Debug.Print t.StopTimer 'Stop the timer
+    GoTo clean_up
+    
+clean_up:
+    wbconn.Close
+    Set wbconn = Nothing
+    Set WorkBookConnection = Nothing
+    
 End Sub
 
 ' ISAH ARTICLE IMPORT
@@ -3279,7 +3624,7 @@ Sub isah_import_articles()
         r.update_named_range main.NUMBER_PER_PALLET_NAMED_RANGE, ws.Range("A1").Resize(UBound(recordsArray, 1), UBound(recordsArray, 2)), ThisWorkbook
     
         ' Set column formats
-        r.format_columns ThisWorkbook.Sheets(main.NUMBER_PER_PALLET_SHEET_NAME), main.MAP_NUMBER_PER_PALLET_COL_TO_FMT
+        r.formatRangeColumns ThisWorkbook.Sheets(main.NUMBER_PER_PALLET_SHEET_NAME), main.MAP_NUMBER_PER_PALLET_COL_TO_FMT
         
         ' calculate worksheet such that references are updated
         Application.Calculate
@@ -3312,7 +3657,7 @@ Public Sub btn_update_isah_data_Click()
     capgrpSheet.Range("A1").Activate
     
     ' after updating isah data store the resulting state
-    main.SafeStoreCurrentState
+    main.SafeStoreCurrentState ActiveSheet
     Application.ScreenUpdating = True
     Application.EnableEvents = True
 End Sub
@@ -3322,7 +3667,7 @@ Public Sub btn_add_record_Click()
     Application.EnableEvents = False
     main.insert_record ActiveSheet.name
     ' after insertion store the resulting state
-    main.SafeStoreCurrentState
+    main.SafeStoreCurrentState ActiveSheet
     Application.ScreenUpdating = True
     Application.EnableEvents = True
 End Sub
@@ -3332,7 +3677,7 @@ Public Sub btn_delete_record_Click()
     Application.EnableEvents = False
     main.delete_record ActiveSheet.name
     ' after deletion store the resulting state
-    main.SafeStoreCurrentState
+    main.SafeStoreCurrentState ActiveSheet
     Application.ScreenUpdating = True
     Application.EnableEvents = True
 End Sub
@@ -3350,6 +3695,14 @@ Public Sub btn_print_dates_Click()
     Application.ScreenUpdating = False 'Otherwise main.print_planning doesnt insert the headers correctly, somehow
     Application.EnableEvents = False
     main.print_planning ActiveSheet.name, print_pdf:=False, delete_print_sheet:=True
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+End Sub
+
+Public Sub btn_export_pdf_Click()
+    Application.ScreenUpdating = False 'Otherwise main.print_planning doesnt insert the headers correctly, somehow
+    Application.EnableEvents = False
+    main.print_planning ActiveSheet.name, print_pdf:=True, delete_print_sheet:=True, show_pdf_exported_msg:=main.PRINT_SHOW_PDF_EXPORTED
     Application.ScreenUpdating = True
     Application.EnableEvents = True
 End Sub
@@ -3400,9 +3753,29 @@ Public Sub control_sheet_update_database_settings(Optional ByVal Target As Range
 End Sub
 
 ' 5. print planning
-Public Sub print_planning(capgrp As String, Optional print_pdf As Boolean = True, Optional delete_print_sheet As Boolean = True)
+Public Sub print_planning(capgrp As String, Optional print_pdf As Boolean = True, Optional delete_print_sheet As Boolean = True, Optional show_pdf_exported_msg As Boolean = False)
+    ' Prints the planning for a specified capacity group (capgrp).
+    ' If print_pdf is True, it exports the planning to a PDF file.
+    ' If delete_print_sheet is True, it deletes the print sheet after printing.
+    ' If show_pdf_exported_msg is True, it shows a message box with the absolute path of the exported PDF.
+    '
+    ' Parameters:
+    ' capgrp - The name of the capacity group for which the planning is being printed.
+    ' print_pdf - An optional boolean indicating whether to export the planning to a PDF file.
+    ' delete_print_sheet - An optional boolean indicating whether to delete the print sheet after printing.
+    ' show_pdf_exported_msg - An optional boolean indicating whether to show a message box with the PDF export path.
+    
     Dim ws As Worksheet, rng0 As Range, range_name As String, headerRange As Range
     Dim ws0 As Worksheet, ws1 As Worksheet, rng_orders As Range, rng_workdays As Range, wkNumber As String
+    Dim pdf_path As String
+    
+    ' if printing PDF, get and validate the location beforehand
+    If print_pdf = True Then
+       pdf_path = main.get_capgrp_print_location(capgrp)
+       If pdf_path = "" Then
+          Exit Sub
+       End If
+    End If
     
     ' Get the current weeknumber
     wkNumber = main.get_capgrp_weeknumber(capgrp)
@@ -3473,6 +3846,9 @@ Public Sub print_planning(capgrp As String, Optional print_pdf As Boolean = True
            cl.value = renameWorkTimesColumnsDict.item(cl.value)
         End If
     Next cl
+    
+    ' Add the Extra info section to the print range
+    main.print_add_planning_extra_info
     
     ' Style `capgrp_workdays` range
     ws1.Activate
@@ -3597,9 +3973,11 @@ nx_break:
       Application.DisplayAlerts = False
         
       'Print the named range to a PDF file
-       print_rng.ExportAsFixedFormat Type:=xlTypePDF, Filename:=main.get_capgrp_print_location(capgrp), Quality:=xlQualityStandard, IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:=False
-       Debug.Print str.subInStr("PDF `@1` exported to `@2`", capgrp, main.get_capgrp_print_location(capgrp))
-        
+       print_rng.ExportAsFixedFormat Type:=xlTypePDF, fileName:=pdf_path, Quality:=xlQualityStandard, IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:=False
+       If main.P_DEBUG Then
+          Debug.Print str.subInStr("PDF `@1` exported to `@2`", capgrp, pdf_path)
+       End If
+              
       'Restore the display alerts setting
        Application.DisplayAlerts = True
     End If
@@ -3611,10 +3989,72 @@ nx_break:
        ws0.Activate
     End If
     
+    If print_pdf And show_pdf_exported_msg Then
+       MsgBox "PDF exported to: " & pdf_path
+    End If
+        
+End Sub
+
+Sub print_add_planning_extra_info()
+    ' Add ExtraInfo range
+    Dim extraInfoFields As Variant, wsPrint As Worksheet
+    extraInfoFields = Split(main.PRINT_EXTRA_INFO_FIELDS, ";")
+    Set wsPrint = ThisWorkbook.Worksheets(main.PRINT_SHEET_NAME)
+    
+    Dim extraInfoRange As Range
+    Set extraInfoRange = wsPrint.Range(main.PRINT_EXTRA_INFO_ADDRESS)
+    
+    ' Simple extra info range
+    extraInfoRange.Merge
+    
+    ' Add borders to ExtraInfo
+    extraInfoRange.Borders.LineStyle = xlContinuous
+    
+    Exit Sub
+    
+    ' Merge and fill the first row
+    With extraInfoRange.Rows(1)
+        .Merge
+        .value = "Extra info"
+        .Font.Bold = True
+        .HorizontalAlignment = xlCenter
+    End With
+    
+    ' Merge and fill the 2nd and 3rd rows
+    With extraInfoRange.Range(Cells(2, 1), Cells(3, 1))
+        .Merge
+        .value = extraInfoFields(0)
+    End With
+    
+    With extraInfoRange.Range(Cells(2, 2), Cells(3, 3))
+        .Merge
+    End With
+    
+    ' Merge and fill the 4th and 5th rows
+    With extraInfoRange.Range(Cells(4, 1), Cells(5, 1))
+        .Merge
+        .value = extraInfoFields(1)
+    End With
+    With extraInfoRange.Range(Cells(4, 2), Cells(5, 3))
+        .Merge
+    End With
+    
+    ' Merge and fill the 6th and 7th rows
+    With extraInfoRange.Range(Cells(6, 1), Cells(7, 1))
+        .Merge
+        .value = extraInfoFields(2)
+    End With
+    With extraInfoRange.Range(Cells(6, 2), Cells(7, 3))
+        .Merge
+    End With
+    
+    ' Add borders to ExtraInfo
+    extraInfoRange.Borders.LineStyle = xlContinuous
 End Sub
 
 Sub test_print_pdf()
-main.print_planning "LN 1", True
+main.print_planning "LN 1", True, False
+'main.print_add_planning_extra_info
 
 End Sub
 
@@ -3695,12 +4135,18 @@ Sub btn_import_art_Click()
   Application.ScreenUpdating = False
   Application.EnableEvents = False
   
+  ' Format isah input range columns to expected data types
+  main.format_isah_input_range
+  
 On Error GoTo control_sheet
   ' loop over capgrps as update orders
   For Each c In main.get_capgrp_sheet_names()
      capgrp_sheet = CStr(c)
      Debug.Print "updating sheet " & capgrp_sheet
      main.update_orders_range capgrp_sheet
+     If c = "LN 2" Then
+     Exit Sub
+     End If
   Next
 GoTo clean_up
  
@@ -3813,6 +4259,7 @@ Public Sub btn_clear_sheet_Click()
 
 On Error GoTo control_sheet
   main.clear_all_capgrp_sheets
+  
 GoTo clean_up
 
 control_sheet:
@@ -3866,17 +4313,111 @@ Public Sub btn_import_testdata_Click()
   Application.EnableEvents = True
 End Sub
 
+Public Sub btn_add_new_orders_Click()
+    ' This subroutine processes new orders from the "NIEUW" sheet and adds them to the appropriate capgrp sheets.
+    ' It checks for the existence of the capgrp sheet, verifies if the order already exists, and ensures the week number matches.
+    ' If any condition is not met, it displays an error message and exits the subroutine.
+    
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Dim ws As Worksheet, new_orders_rng As Range, capgrp As String, article As String, record As Dictionary
+    Dim errmsg As String, prodOrder As String, capgrp_weeknumber As Integer
+    
+    ' Get the worksheet and range for new orders
+    Set ws = ThisWorkbook.Sheets(main.ISAH_NEW_ORDERS_SHEET_NAME)
+    Set new_orders_rng = r.get_range(ws)
+    
+    ' Check if there are any records in the new orders range
+    If new_orders_rng.Rows.count <= 1 Then
+        MsgBox "No records on " & ws.name
+        GoTo clean_up
+    End If
+    
+    ' Loop over all values in the new_orders_rng column Cap.Grp
+    For row_index = 2 To new_orders_rng.Rows.count
+        Set record = r.getRowAsRecord(new_orders_rng, row_index)
+        capgrp = record.item("Cap.Grp")
+        
+        ' Check if the capgrp sheet exists
+        If Not w.sheet_exists(capgrp) Then
+            errmsg = "Capgrp `" & capgrp & "` sheet does not exist"
+            MsgBox errmsg
+            GoTo clean_up
+        End If
+        
+        ' Check if the capgrp orders range has more than 1 row
+        If main.get_orders_range(capgrp).Rows.count <= 1 Then
+            errmsg = "Capgrp `" & capgrp & "` sheet does not have orders"
+            MsgBox errmsg
+            GoTo clean_up
+        End If
+nx:
+    Next row_index
+    
+    ' Loop over all rows of new_orders_rng
+    For row_index = 2 To new_orders_rng.Rows.count
+        Set record = r.getRowAsRecord(new_orders_rng, row_index)
+        capgrp = record.item("Cap.Grp")
+        article = record.item("Artikel")
+        prodOrder = record.item("Productieorder")
+        
+        ' Activate the capgrp sheet and get the orders range
+        ThisWorkbook.Sheets(capgrp).Activate
+        Dim orders_rng As Range
+        Set orders_rng = main.get_orders_range(capgrp)
+        
+        orders_rng.Select
+        
+        
+        ' Check if the article already exists in the orders range
+        productie_orders = r.get_column_values(orders_rng, "Productieorder")
+        If u.InList(CLng(prodOrder), productie_orders) Then
+            errmsg = "Sheet `" & capgrp & "` productieorder `" & prodOrder & "` already inserted."
+            MsgBox errmsg
+            GoTo clean_up
+        End If
+        
+        ' Get the week number from the capgrp sheet and compare with the record
+        capgrp_weeknumber = main.get_capgrp_weeknumber(capgrp)
+        If capgrp_weeknumber <> record.item("ProdWk") Then
+            errmsg = "Sheet `" & capgrp & "` weeknumber is `" & capgrp_weeknumber & "`, new order weeknumber `" & record.item("ProdWk") & "`"
+            MsgBox errmsg
+            GoTo clean_up
+        End If
+        
+        ' Activate the orders_rng first column last cell with row offset 1
+        r.safe_offset(orders_rng.Cells(orders_rng.Rows.count, 1), offset_row:=1).Activate
+        
+        ' Call btn_add_record_Click to add a new record
+        Call btn_add_record_Click
+        Application.ScreenUpdating = False
+        Application.EnableEvents = False
+        
+        ' Insert the record into the orders range
+        Set orders_rng = main.get_orders_range(capgrp) 'refresh the orders range
+        r.insertRecordIntoRange orders_rng, record, orders_rng.Rows.count, validate_columns:=False
+
+nx2:
+    Next row_index
+
+clean_up:
+  Set ws = ThisWorkbook.Sheets(main.CONTROL_SHEET_NAME)
+  ws.Activate
+  Application.ScreenUpdating = True
+  Application.EnableEvents = True
+End Sub
+
 ' STATE MANAGEMENT
-Sub SafeStoreCurrentState()
+Sub SafeStoreCurrentState(ws As Worksheet)
     ' store current state
     ' TODO update from tests
     If main.P_DEBUG Then
        On Error GoTo 0
-       state_control.storeCapgrpState
+       state_control.storeCapgrpState ws
        On Error GoTo handle_error
     Else
        On Error Resume Next
-       state_control.storeCapgrpState
+       state_control.storeCapgrpState ws
        Debug.Print "Error in: SafeStoreCurrentState"
        On Error GoTo handle_error
     End If

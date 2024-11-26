@@ -10,6 +10,7 @@
 ' fit_named_range_to_values(name, wb) => Fits named range to non-empty cells
 ' add_formula_column_to_named_range(name, newColumn, formulaDefinition) => Adds formula column to named range
 ' name_exist(name, ws, wb) => Checks if named range exists
+' cleanNamesWithReferenceError
 
 ' Formulas
 ' fill_formula_range(rng, formulaDefinition, only_values) => Fills range with formula
@@ -60,7 +61,7 @@
 ' add_outside_border(rng) => Adds outside border to range
 ' add_all_borders(rng) => Adds all borders to range
 ' get_color_i() => Gets color index of cell
-' format_columns =>
+' formatRangeColumns => formats the columns of range or worksheet according to string mapping "column=format" or dictionary
 
 ' Worksheet, Workbook
 ' get_default_ws(ws) => Gets default worksheet
@@ -93,8 +94,8 @@ Global Const FILTER_COLUMN_NAME = "Cap.Grp"
 
 'tests
 Sub test_range_functions()
-   Dim n As name, rng0 As Range, ws0 As Worksheet, wb0 As Workbook, wstest As Worksheet, rng1 As Range, named_range_name As String, formulaTemplate As String
-   Dim numRows As Long, numCols As Long
+   Dim N As name, rng0 As Range, ws0 As Worksheet, wb0 As Workbook, wstest As Worksheet, rng1 As Range, named_range_name As String, formulaTemplate As String
+   Dim numRows As Long, numCols As Long, testRange As Range
    Set wb0 = ThisWorkbook
    Set wstest = w.get_or_create_worksheet("test", wb0, True)
    
@@ -105,12 +106,12 @@ Sub test_range_functions()
     'filter on single value
     filter_values = Array("LN 1")
     filtered_array = r.filter_range(rng0, r.FILTER_COLUMN_NAME, filter_values, remove_filter:=True, xl_operator:=xlFilterValues)
-    Debug.Assert a.num_array_rows(filtered_array) > 1
+    Debug.Assert a.numArrayRows(filtered_array) > 1
     
     'filter on multiple values
     filter_values = Array("LN 1", "HCM", "U800")
     filtered_array = r.filter_range(rng0, r.FILTER_COLUMN_NAME, filter_values, remove_filter:=False, xl_operator:=xlFilterValues)
-    Debug.Assert a.num_array_rows(filtered_array) > 1
+    Debug.Assert a.numArrayRows(filtered_array) > 1
     
     'named ranges
     Dim Column1 As Range, Column2 As Range
@@ -126,41 +127,15 @@ Sub test_range_functions()
     Set Column2 = r.get_column(named_range_name, "val2")
     Debug.Assert Column1.Cells(2) = 1 And Column2.Cells(3) = 2
     
-    'subset named range
-    r.subsetNamedRange named_range_name, 1, 1, 1, 1
-    Debug.Assert r.get_range(named_range_name).address = "$A$1"
-    
-    named_range_name = "test2"
-    r.create_named_range named_range_name, wstest.name, "F1:G5", header_row:="val4,val5", overwrite:=True, default_value:="A"
-    Set rng0 = r.get_range(named_range_name)
-    rng0.Select
-    
-    new_values = a.create_array(5, 5, "B")
-    
-    Exit Sub
-    
-    ' Resize the named range to match the dimensions of the values array
-    numRows = UBound(new_values, 1)
-    numCols = UBound(new_values, 2)
-    Set rng1 = r.getResizedRange(rng0, num_rows:=numRows, num_cols:=numCols)
-    Debug.Assert rng1.Rows.count = numRows And rng1.columns.count = numCols
-    
-    ' test updateNamedRangeWithValues
-    r.updateNamedRangeWithValues named_range_name, new_values
-    Set rng1 = r.get_range(named_range_name)
-    Debug.Assert rng1.Rows.count = numRows And rng1.columns.count = numCols And rng1.Cells(1, 1) = new_values(1, 1)
-    
-    ' insert columns at start, second position and end
-    r.add_named_range_column "test", "first_column", pos:=1, values:=a.to_array("A")
-    r.add_named_range_column "test", "second_column", pos:=2, values:=a.to_array("B")
-    r.add_named_range_column "test", "last_column", pos:=0, values:=a.to_array("Z")
-    
     ' remove column id
     r.remove_named_range_column "test", "id"
     
     ' insert formula to add columns val1+val2
-    r.add_named_range_column "test", "val1+val2", pos:=0
+    Dim named_range As String
+    named_range = "test"
+    r.add_named_range_column named_range, "val1+val2", pos:=0
     formulaTemplate = "=@1+@2"
+    
     ref1 = r.get_column(named_range, "val1").Cells(2, 1).address
     ref2 = r.get_column(named_range, "val2").Cells(2, 1).address
     formulaDef = Replace(str.subInStr(formulaTemplate, ref1, ref2), "$", "")
@@ -170,9 +145,96 @@ Sub test_range_functions()
     formulaRange.Select
     r.fill_formula_range formulaRange, formulaDef
     
-    ' sorting
-    r.sort_range_by_columns_2 rng0, Array("Cap.Grp", "Aantal")
+    Set rng0 = r.get_range(named_range)
     
+    Debug.Assert rng0.Cells(10, 1).value + rng0.Cells(10, 2).value = rng0.Cells(10, 4)
+    
+    ' insert columns at start, second position and end
+    r.add_named_range_column "test", "first_column", pos:=1, values:=a.to_array("A")
+    r.add_named_range_column "test", "second_column", pos:=2, values:=a.to_array("B")
+    r.add_named_range_column "test", "last_column", pos:=0, values:=a.to_array("Z")
+     
+    r.set_column_values named_range, "first_column", a.create_integer_vector(1, 100 - 1)
+    r.set_column_values named_range, "second_column", a.create_integer_vector(2, 100)
+    
+    'subset named range
+    r.subsetNamedRange named_range_name, 1, 1, 1, 1
+    Debug.Assert r.get_range(named_range_name).address = "$A$1"
+    
+    named_range_name = "test2"
+    r.create_named_range named_range_name, wstest.name, "I1:J5", header_row:="val4,val5", overwrite:=True, default_value:="A"
+    Set rng0 = r.get_range(named_range_name)
+    rng0.Select
+    
+    ' get row(s) as record (Dictionary)
+    Dim rowRecord As Dictionary, Records As collection
+    Set rowRecord = getRowAsRecord(rng0, 2)
+    Debug.Assert rowRecord.count = 2 And rowRecord.item("val4") = "A" And rowRecord.item("val5") = "A"
+    
+    Dim insert_range As Range
+    r.create_named_range "test_insert_range", "test", "L1:N3", header_row:="val4,val6,val5", default_value:=0
+    Set insert_range = r.get_range("test_insert_range")
+    
+    r.insertRecordIntoRange insert_range, rowRecord, 3
+    Debug.Assert insert_range.Rows(3).Cells(1).value = "A" And insert_range.Rows(3).Cells(2).value = 0 And insert_range.Rows(3).Cells(3).value = "A"
+    
+    Set Records = getRowsAsRecords(insert_range)
+    Debug.Assert Records.count = insert_range.Rows.count - 1 'And TypeName(Records.item(0)) = "Dictionary"
+    
+    insert_range.Select
+    'Exit Sub
+    
+    ' append/delete row
+    rng0.Select
+    
+    r.AppendColumnToRange rng0, "val6", Array(1, 2, 3, 4)
+    rng0.Select
+    Debug.Assert rng0.address = "$I$1:$K$5"
+    
+    r.AppendRowToRange rng0, Array("B", "C", 5)
+    rng0.Select
+    Debug.Assert rng0.address = "$I$1:$K$6"
+    
+    r.update_named_range named_range_name, rng0.address
+    Set testRange = r.get_range(named_range_name)
+    r.AppendRowToNamedRange named_range_name, Array("D", "E", 6)
+    Debug.Assert r.get_range(named_range_name).address = "$I$1:$K$7"
+    
+    r.DeleteRowFromNamedRange named_range_name
+    Debug.Assert r.get_range(named_range_name).address = "$I$1:$K$6"
+    
+    
+    
+    r.get_range(named_range_name).Select
+    
+    
+    
+    
+    ' TODO append row, column
+    
+    new_values = a.create_array(5, 5, "B")
+    
+    ' Resize the named range to match the dimensions of the values array
+    numRows = UBound(new_values, 1)
+    numCols = UBound(new_values, 2)
+    
+    Set rng1 = r.getResizedRange(rng0, num_rows:=numRows, num_cols:=numCols)
+    Debug.Assert rng1.Rows.count = numRows And rng1.columns.count = numCols
+    
+    ' test updateNamedRangeWithValues
+    r.updateNamedRangeWithValues named_range_name, new_values
+    Set rng1 = r.get_range(named_range_name)
+    Debug.Assert rng1.Rows.count = numRows And rng1.columns.count = numCols And rng1.Cells(1, 1) = new_values(1, 1)
+    
+    ' sorting
+    'r.sort_range_by_columns_2 rng0, Array("Cap.Grp", "Aantal")
+    
+    'clean up
+    r.delete_named_range "test"
+    r.delete_named_range "test2"
+    r.delete_named_range "test_insert_range"
+    w.delete_worksheet wstest.name
+    Exit Sub
 End Sub
 
 
@@ -345,8 +407,6 @@ Sub add_named_range_column(named_range As String, column_name As String, Optiona
     If Not u.is_empty_missing(values) Then
       r.set_column_values named_range, column_name, values
     End If
-    
-    
 End Sub
 
 Sub remove_named_range_column(named_range As String, column_name As String)
@@ -559,7 +619,7 @@ Sub updateNamedRangeWithValues(named_range_name As String, values As Variant, Op
     
     ' Resize the named range to match the dimensions of the values array
     numCols = a.num_array_columns(values)
-    numRows = a.num_array_rows(values)
+    numRows = a.numArrayRows(values)
     
     Set rng = r.getResizedRange(rng, num_rows:=numRows, num_cols:=numCols)
     Debug.Print "updateNamedRangeWithValues: resized range is " & rng.address
@@ -570,6 +630,58 @@ Sub updateNamedRangeWithValues(named_range_name As String, values As Variant, Op
     ' Update the named range
     r.update_named_range named_range_name, rng
 End Sub
+
+' Append a row to a named range and update the named range
+Sub AppendRowToNamedRange(range_name As String, Optional values As Variant, Optional overwrite As Boolean = True)
+    ' This subroutine appends a new row to the end of the specified named range.
+    ' If values are provided, it sets these values in the new row.
+    ' The named range is updated to include the new row.
+    '
+    ' Parameters:
+    ' range_name - The name of the range to which the new row will be appended.
+    ' values - (Optional) The values to be set in the new row.
+    ' overwrite - (Optional) If True, overwrite existing values in the new row.
+    
+    Dim rng As Range
+    Dim ws As Worksheet
+    
+    ' Get the named range
+    Set rng = r.get_range(range_name)
+    Set ws = rng.Worksheet
+    
+    ' Append the new row to the range
+    r.AppendRowToRange rng, values, overwrite
+    
+    ' Update the named range to include the new row
+    r.update_named_range range_name, rng
+End Sub
+
+' Delete a row from a named range and update the named range
+Sub DeleteRowFromNamedRange(range_name As String, Optional index As Long = -1)
+    ' This subroutine deletes a row from the specified named range at the given index.
+    ' The named range is updated to exclude the deleted row.
+    '
+    ' Parameters:
+    ' range_name - The name of the range from which the row will be deleted.
+    ' index - The index of the row to be deleted.
+    
+    Dim rng As Range
+    Dim ws As Worksheet
+    
+    ' Get the named range
+    Set rng = r.get_range(range_name)
+    Set ws = rng.Worksheet
+    
+    ' Delete the row from the range
+    If index = -1 Then
+       index = rng.Rows.count
+    End If
+    r.DeleteRowFromRange rng, index
+    
+    ' Update the named range to exclude the deleted row
+    r.update_named_range range_name, rng
+End Sub
+
 
 ' formulas
 Sub add_formula_column_to_named_range(name As String, Optional newColumn = "formula", Optional formulaDefinition = "=A1+B1")
@@ -644,16 +756,6 @@ Function get_range(rng As Variant, Optional ws As Variant, Optional wb As Varian
     Dim rng0 As Range, ws0 As Worksheet, wb0 As Workbook
     
     ' Set default worksheet and workbook
-    If IsMissing(ws) Then
-        Set ws0 = ActiveSheet
-    ElseIf IsEmpty(ws) Then
-        Set ws0 = ActiveSheet
-    ElseIf ws Is Nothing Then
-        Set ws0 = ActiveSheet
-    Else
-        Set ws0 = ws
-    End If
-    
     If IsMissing(wb) Then
         Set wb0 = ActiveWorkbook
     ElseIf IsEmpty(ws) Then
@@ -662,6 +764,18 @@ Function get_range(rng As Variant, Optional ws As Variant, Optional wb As Varian
        Set wb0 = ActiveWorkbook
     Else
        Set wb0 = wb
+    End If
+    
+    If IsMissing(ws) Then
+        Set ws0 = ActiveSheet
+    ElseIf VarType(ws) = vbString Then
+        Set ws0 = wb0.Sheets(ws)
+    ElseIf IsEmpty(ws) Then
+        Set ws0 = ActiveSheet
+    ElseIf ws Is Nothing Then
+        Set ws0 = ActiveSheet
+    Else
+        Set ws0 = ws
     End If
     
     ' Convert rng to range object
@@ -954,21 +1068,59 @@ Function getColumnIndex(rng As Range, column_name_index) As Long
             getColumnIndex = column_index
         Else
             ' Raise an error if the column index is out of bounds
-            Err.Raise vbObjectError + 1, "get_column_index", "Column integer greater than range's column count."
+            Err.Raise vbObjectError + 1, "getColumnIndex", "Column integer greater than range's column count."
         End If
-    Else
+    ElseIf VarType(column_name_index) = vbString Then
         ' If column_name is a string, find the column index by matching the header name
         column_name = column_name_index
         Set header0 = r.get_header(rng)
         match_index = Application.match(column_name, header0, 0)
         If IsError(match_index) Then
             ' Raise an error if the column name is not found
-            Err.Raise vbObjectError + 1, "get_column_index", "Column name not found in range header."
+            Err.Raise vbObjectError + 1, "getColumnIndex", "Column name not found in range header."
         Else
             ' Return the found column index
             getColumnIndex = match_index
         End If
+    Else
+        Err.Raise vbObjectError + 1, "column_name_index", "Invalid index type"
     End If
+End Function
+
+Function get_index_of_value(value As Variant, rng As Range, Optional raise_error As Boolean = True) As Variant
+    ' Find the first occurrence of the value in the range
+    Dim match_index As Variant
+    match_index = value
+    If VarType(match_index) = vbString Then
+        match_index = Application.match(value, rng, 0)
+        If IsError(match_index) Then
+            If raise_error Then
+                Err.Raise vbObjectError + 1, "get_index_of_value", "Index " & value & " not found in range"
+            Else
+                get_index_of_value = -1
+                Exit Function
+            End If
+        End If
+    ElseIf VarType(match_index) = vbLong Or VarType(match_index) = vbInteger Then
+        If match_index < 1 Or match_index > rng.Cells.count Then
+            If raise_error Then
+                Err.Raise vbObjectError + 1, "get_index_of_value", "Index " & value & " not found in range"
+            Else
+                get_index_of_value = -1
+                Exit Function
+            End If
+        End If
+    Else
+        If raise_error Then
+            Err.Raise vbObjectError + 1, "match_index", "Invalid index type"
+        Else
+            get_index_of_value = -1
+            Exit Function
+        End If
+    End If
+    
+    get_index_of_value = match_index
+    
 End Function
 
 Function get_column_indexes(rng As Range, column_names) As Variant
@@ -1010,6 +1162,7 @@ Function get_row(rng, index As Variant, Optional ws As Worksheet, Optional wb As
        Set get_row = rng1.Offset(ColumnOffset:=offset_column).Resize(ColumnSize:=rng1.columns.count - offset_column)
     End If
 End Function
+
 
 Function get_row_index(rng, row_index) As Long
     Dim row0 As Range, rng0 As Range
@@ -1091,7 +1244,6 @@ Public Function get_default_wb(Optional wb As Variant) As Workbook
     Set get_default_wb = wb0
 End Function
 
-
 Function name_exist(name As String, Optional ws As Worksheet, Optional wb As Workbook) As Boolean
     Dim ws0 As Worksheet, wb0 As Workbook
     
@@ -1112,6 +1264,29 @@ Function name_exist(name As String, Optional ws As Worksheet, Optional wb As Wor
     End If
     On Error GoTo 0
 End Function
+
+Sub cleanNamesWithReferenceError(Optional wb As Workbook)
+    ' This procedure deletes all named ranges in the specified workbook that have a #REF! error.
+    ' If no workbook is specified, it defaults to the active workbook.
+    '
+    ' Parameters:
+    ' wb - (Optional) The workbook in which to clean named ranges. Defaults to the active workbook.
+    
+    Dim nm As name
+    Dim wb0 As Workbook
+    
+    ' Set the workbook to the specified workbook or the active workbook if not specified
+    Set wb0 = r.get_default_wb(wb)
+    
+    ' Loop through each name in the workbook
+    For Each nm In wb0.Names
+        ' Check if the name refers to a range with a #REF! error
+        If InStr(1, nm.RefersTo, "#REF!") > 0 Then
+            ' Delete the name if it has a #REF! error
+            nm.Delete
+        End If
+    Next nm
+End Sub
 
 ' Addresses
 Function get_range_address(ws0 As Worksheet, Optional r0 = 1, Optional r1 = 1, Optional c0 = 1, Optional c1 = 1) As String
@@ -1358,7 +1533,9 @@ Function get_unique_vals(rng) As Variant
     
     ' Loop through the array and add unique values to the dictionary
     If rng Is Nothing Then
-        Err.Raise 1001, , "range is nothing"
+        'Err.Raise 1001, , "range is nothing"
+        get_unique_vals = Array()
+        Exit Function
     End If
     
     arr = rng_to_1d_array(rng)
@@ -1458,26 +1635,7 @@ Function filter_range(rng As Range, column_name As String, filter_value As Varia
           
 End Function
 
-Function get_index_of_value(value As Variant, rng As Range) As Variant
-    ' Find the first occurrence of the value in the range
-    Dim match_index As Variant
-    match_index = value
-    If VarType(match_index) = vbString Then
-        match_index = Application.match(value, rng, 0)
-        If IsError(match_index) Then
-            Err.Raise vbObjectError + 1, "get_index_of_value", "Index " & value & " not found in range"
-        End If
-    ElseIf VarType(match_index) = vbLong Or VarType(match_index) = vbInteger Then
-        If match_index < 1 Or match_index > rng.Cells.count Then
-            Err.Raise vbObjectError + 1, "get_index_of_value", "Index " & value & " not found in range"
-        End If
-    Else
-        Err.Raise vbObjectError + 1, "match_index", "Invalid index type"
-    End If
-    
-    get_index_of_value = match_index
-    
-End Function
+
 
 Function to_column_names(column_names As Variant) As Variant
     Dim result As Variant
@@ -1610,7 +1768,6 @@ Sub InsertColumnIntoRange(rng As Range, column_name_index As Variant, Optional n
     If absColumnIndex = 1 Then
        ' the original column is outside the range, so append to the original range
        Set rng = Union(ws.Range(originalColumnAddress), rng)
-       Debug.Print absColumnIndex, originalColumnAddress, rng.address
     End If
 
     ' Get the new column by index
@@ -1651,7 +1808,7 @@ Sub DeleteColumnFromRange(rng As Range, column_name_index As Variant)
 End Sub
 
 Sub AppendColumnToRange(rng As Range, Optional new_column_name As String, _
-    Optional values As Variant, Optional overwrite As Boolean = True)
+Optional values As Variant, Optional overwrite As Boolean = True)
     ' This subroutine appends a new column to the end of the specified range.
     ' If values are provided, it sets these values in the new column.
     '
@@ -1678,6 +1835,7 @@ Sub AppendColumnToRange(rng As Range, Optional new_column_name As String, _
     
     ' Find the last column index of the range
     firstRow = rng.Rows(1).row
+    firstColumn = rng.columns(1).column
     lastRow = rng.Rows(rng.Rows.count).row
     lastColumn = rng.columns(rng.columns.count).column
     
@@ -1693,6 +1851,88 @@ Sub AppendColumnToRange(rng As Range, Optional new_column_name As String, _
     If new_column_name <> "" Then
        newColumn.Cells(1, 1).value = new_column_name
     End If
+    
+    Set rng = ws.Range(Cells(firstRow, firstColumn), Cells(lastRow, lastColumn + 1))
+    
+End Sub
+
+
+' This subroutine appends a new row to the end of the specified range.
+' If values are provided, it sets these values in the new row.
+'
+' Parameters:
+' rng - The range to which the new row will be appended.
+' new_row_name - (Optional) The name for the header of the new row.
+' values - (Optional) The values to be set in the new row.
+Sub AppendRowToRange(rng As Range, Optional values As Variant, Optional overwrite As Boolean = True)
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim newRow As Range
+    Dim firstColumn As Long
+    Dim lastColumn As Long
+    Dim valuesArray As Variant
+    
+    ' Set the worksheet based on the range
+    Set ws = rng.Worksheet
+    
+    ' Convert values to 1D array if not already
+    If Not IsMissing(values) Then
+        valuesArray = a.ConvertTo1DArray(values)
+        
+        ' Check that the length of values matches the number of columns
+        If UBound(valuesArray) - LBound(valuesArray) + 1 <> rng.columns.count Then
+            Err.Raise 1001, "AppendRowToRange", "Length of values does not match number of columns in range"
+        End If
+    End If
+    
+    ' Find the last row index of the range
+    firstRow = rng.Rows(1).row
+    firstColumn = rng.columns(1).column
+    lastColumn = rng.columns(rng.columns.count).column
+    lastRow = rng.Rows(rng.Rows.count).row
+    
+    ' Append the new row at the end of the range
+    Set newRow = ws.Range(Cells(lastRow + 1, firstColumn), Cells(lastRow + 1, lastColumn))
+    
+    ' If values are provided, set them in the new row
+    If Not IsMissing(values) Then
+        newRow.value = valuesArray 'Application.Transpose(valuesArray)
+    End If
+    
+    Set rng = ws.Range(Cells(firstRow, firstColumn), Cells(lastRow + 1, lastColumn))
+    
+End Sub
+
+' This subroutine deletes a row from the specified range at the given index.
+'
+' Parameters:
+' rng - The range from which the row will be deleted.
+' index - The index of the row to be deleted.
+Sub DeleteRowFromRange(rng As Range, index As Long)
+    Dim ws As Worksheet
+    Dim firstRow As Long
+    Dim lastRow As Long
+    
+    ' Set the worksheet based on the range
+    Set ws = rng.Worksheet
+    
+    ' Check if the range has only one row
+    If rng.Rows.count = 1 Then
+        Debug.Print "DeleteRowFromRange: Range has only one row, nothing to delete."
+        Exit Sub
+    End If
+    
+    ' Check if index is within bounds
+    If index > rng.Rows.count Then
+        Err.Raise 1002, "DeleteRowFromRange", "Index exceeds number of rows in range"
+    End If
+    
+    ' Find the first and last row index of the range
+    firstRow = rng.Rows(1).row
+    lastRow = rng.Rows(rng.Rows.count).row
+    
+    ' Delete the row at the specified index
+    ws.Rows(firstRow + index - 1).Delete
 End Sub
 
 ' copy paste
@@ -1835,7 +2075,7 @@ Sub get_color_i()
     color_index = Range("A1").Interior.Color 'Replace "A1" with the cell or range containing the color you want to get
 End Sub
 
-Sub format_columns(ws As Worksheet, column_format_mapping As Variant, Optional wb As Workbook, Optional ky_delim As String = "=", _
+Sub formatRangeColumns(rng_or_ws, column_format_mapping As Variant, Optional wb As Workbook, Optional ky_delim As String = "=", _
                    Optional it_delim As String = ";")
     ' Define variables
     Dim mapping As Scripting.Dictionary
@@ -1848,7 +2088,7 @@ Sub format_columns(ws As Worksheet, column_format_mapping As Variant, Optional w
     Set wb = r.get_default_wb(wb)
 
     ' Get the range from the worksheet
-    Set rng = r.get_range(ws, wb:=wb)
+    Set rng = r.get_range(rng_or_ws, wb:=wb)
     
     ' Get the mapping from column_format_mapping
     If TypeName(column_format_mapping) = "String" Then
@@ -1859,7 +2099,7 @@ Sub format_columns(ws As Worksheet, column_format_mapping As Variant, Optional w
         Set mapping = column_format_mapping
     Else
         ' Raise an error if column_format_mapping is not a string or dictionary
-        Err.Raise 1001, "format_columns", "column_format_mapping must be a string or dictionary"
+        Err.Raise 1001, "formatRangeColumns", "column_format_mapping must be a string or dictionary"
     End If
     
     ' Loop over keys in mapping
@@ -1875,10 +2115,146 @@ Sub format_columns(ws As Worksheet, column_format_mapping As Variant, Optional w
             rng.columns(colIndex).NumberFormat = colFormat
         Else
             ' Raise an error if the column name is not found
-            Err.Raise 1002, "format_columns", "Column name not found: " & colName
+            Err.Raise 1002, "formatRangeColumns", "Column name not found: " & colName
         End If
     Next colName
 End Sub
+
+' Record functions
+' NEW Function: getRowAsRecord
+' This function returns a dictionary mapping column names to the values in a specified row of a given range.
+' Parameters:
+'   - rng: The range from which to extract the column names and row values.
+'   - row_index: The index of the row from which to extract the values.
+' Returns:
+'   - A dictionary where each key is a column name and each value is the corresponding cell value from the specified row.
+Function getRowAsRecord(rng As Range, row_index As Variant) As Scripting.Dictionary
+    Dim rng0 As Range
+    Dim headerRow As Range
+    Dim rowValues As Range
+    Dim colName As String
+    Dim colValue As Variant
+    Dim record As Scripting.Dictionary
+    Dim i As Long
+    
+    ' Get the range object
+    Set rng0 = r.get_range(rng)
+    
+    ' Get the header row
+    Set headerRow = r.get_header(rng0)
+    
+    ' Get the specified row values
+    Set rowValues = r.get_row(rng0, row_index)
+    
+    ' Initialize the dictionary
+    Set record = New Scripting.Dictionary
+    
+    ' Loop through each column in the header row
+    For i = 1 To headerRow.columns.count
+        colName = headerRow.Cells(1, i).value
+        colValue = rowValues.Cells(1, i).value
+        ' Add the column name and value to the dictionary
+        record.Add colName, colValue
+    Next i
+    
+    ' Return the dictionary
+    Set getRowAsRecord = record
+End Function
+
+' NEW Function: insertRecordIntoRange
+' This function inserts a record (defined as a dictionary with column names as keys and column values as values) into a specified row of a given range.
+' Parameters:
+'   - rng: The range into which the record will be inserted.
+'   - record: A dictionary where each key is a column name and each value is the corresponding cell value to be inserted.
+'   - row_index: The index of the row where the record will be inserted. If row_index is -1, the record is inserted into the last row of the range.
+' Raises:
+'   - An error if a column name in the record is not found in the range header.
+'   - An error if row_index is less than -1 or greater than the number of rows in the range.
+Sub insertRecordIntoRange(rng As Range, record As Scripting.Dictionary, row_index As Long, Optional validate_columns As Boolean = True)
+    Dim headerRow As Range
+    Dim colName As Variant
+    Dim colIndex As Long
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    
+    ' Get the worksheet and header row
+    Set ws = rng.Worksheet
+    Set headerRow = r.get_header(rng)
+    
+    ' Determine the row index for insertion
+    If row_index = -1 Then
+        ' Insert into the last row
+        lastRow = rng.Rows.count
+        row_index = lastRow
+    ElseIf row_index < -1 Or row_index > rng.Rows.count Then
+        ' Raise an error if row_index is out of bounds
+        Err.Raise vbObjectError + 1, "insertRecordIntoRange", "Invalid row index: " & row_index
+    End If
+    
+    ' Loop through each item in the record
+    For Each colName In record.Keys
+        ' Find the column index by matching the header name
+        colIndex = r.get_index_of_value(colName, headerRow, raise_error:=validate_columns)
+        
+        If colIndex = -1 Then
+         GoTo nx
+        End If
+        
+        ' Set the value in the specified cell
+        rng.Cells(row_index, colIndex).value = record(colName)
+nx:
+    Next colName
+End Sub
+
+' NEW Function: getRowsAsRecords
+' This function returns a collection of dictionaries, where each dictionary represents a row in the specified range.
+' Each dictionary maps column names to the corresponding cell values in the row.
+' Parameters:
+'   - rng: The range from which to extract the rows as records.
+' Returns:
+'   - A collection of dictionaries, where each dictionary represents a row with column names as keys and cell values as values.
+Function getRowsAsRecords(rng As Range) As collection
+    Dim rng0 As Range
+    Dim headerRow As Range
+    Dim rowValues As Range
+    Dim colName As String
+    Dim colValue As Variant
+    Dim record As Scripting.Dictionary
+    Dim Records As collection
+    Dim i As Long, j As Long
+    
+    ' Initialize the collection to store records
+    Set Records = New collection
+    
+    ' Get the range object
+    Set rng0 = r.get_range(rng)
+    
+    ' Get the header row
+    Set headerRow = r.get_header(rng0)
+    
+    ' Loop through each row in the range
+    For i = 2 To rng0.Rows.count
+        ' Get the specified row values
+        Set rowValues = rng0.Rows(i)
+        
+        ' Initialize the dictionary for the current row
+        Set record = New Scripting.Dictionary
+        
+        ' Loop through each column in the header row
+        For j = 1 To headerRow.columns.count
+            colName = headerRow.Cells(1, j).value
+            colValue = rowValues.Cells(1, j).value
+            ' Add the column name and value to the dictionary
+            record.Add colName, colValue
+        Next j
+        
+        ' Add the dictionary to the collection
+        Records.Add record
+    Next i
+    
+    ' Return the collection of records
+    Set getRowsAsRecords = Records
+End Function
 
 ' helpers
 
@@ -1903,6 +2279,8 @@ End Function
 Function get_array_len(arr) As Long
     get_array_len = UBound(arr) - LBound(arr) + 1
 End Function
+
+
 
 ' TESTS
 Sub test_set_bold_row()

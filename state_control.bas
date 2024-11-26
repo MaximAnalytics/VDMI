@@ -1,12 +1,14 @@
 ' functions, procedures to store, restore and print the active capgrp sheet state
-Sub storeCapgrpState()
+Sub storeCapgrpState(ws As Worksheet)
     Dim capgrp_sheet As String, States As collection
     
     ' get the states collection of the current capgrp sheet
-    capgrp_sheet = ActiveSheet.name
-    If Not main.IsCapgrpSheet(capgrp_sheet) Then
-        Exit Sub
-    End If
+    capgrp_sheet = ws.name
+    
+    'If Not main.IsCapgrpSheet(capgrp_sheet) Then
+    '   Debug.Print str.subInStr("sheet @1 is not capgrp sheet", capgrp_sheet)
+    '   Exit Sub
+    'End If
     
     Set States = getCapgrpStates(capgrp_sheet)
     If States Is Nothing Then
@@ -35,9 +37,9 @@ End Sub
 
 Function getCapgrpStates(capgrp_sheet As String) As collection
     Dim States As New collection
-    If main.IsCapgrpSheet(capgrp_sheet) Then
-        Set getCapgrpStates = Nothing
-    End If
+    'If main.IsCapgrpSheet(capgrp_sheet) Then
+    '    Set getCapgrpStates = Nothing
+    'End If
     
     If Not clls.KeyExists(WorksheetStateCollection, capgrp_sheet) Then
         Debug.Print "add key: " + capgrp_sheet
@@ -77,7 +79,7 @@ Sub restoreLastCapgrpState()
     Dim capgrp_sheet As String, CapgrpStates As collection
     capgrp_sheet = ActiveSheet.name
     capgrpStateArray = getCapgrpStateArray(-2, True)  'last state is the state before the previous state
-    If a.num_array_rows(capgrpStateArray) > -1 Then
+    If a.numArrayRows(capgrpStateArray) > -1 Then
         orders_arr_prev = capgrpStateArray(0)
         worktimes_arr_prev = capgrpStateArray(1)
         'a.printArray orders_arr_prev
@@ -99,7 +101,7 @@ Sub printLastCapgrpState(Optional index = -1)
     Dim capgrp_sheet As String, CapgrpStates As collection
     capgrp_sheet = ActiveSheet.name
     capgrpStateArray = getCapgrpStateArray(index, True)  'last state is the previous state, see worksheet "base" code
-    If a.num_array_rows(capgrpStateArray) > -1 Then
+    If a.numArrayRows(capgrpStateArray) > -1 Then
         orders_arr_prev = capgrpStateArray(0)
         worktimes_arr_prev = capgrpStateArray(1)
         a.printArray orders_arr_prev

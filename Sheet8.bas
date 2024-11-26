@@ -1,6 +1,6 @@
 Private Sub Worksheet_Activate()
     ' safely store the worksheet initial state
-    main.SafeStoreCurrentState
+    main.SafeStoreCurrentState ActiveSheet
 End Sub
 
 Private Sub Worksheet_Change(ByVal Target As Range)
@@ -51,7 +51,7 @@ On Error GoTo handle_error
         Set ordersRange = wb0.Names(orders_range_name).RefersToRange
         If ordersRange.Cells(1, 1).value = "" Then
             Debug.Print "Worksheet_Change: orders range not filled"
-            main.SafeStoreCurrentState
+            main.SafeStoreCurrentState ws0
             Application.ScreenUpdating = True
             Application.EnableEvents = True
             Exit Sub
@@ -86,7 +86,7 @@ On Error GoTo handle_error
             If Target.Cells(1, 1).row = ordersRange.Rows(1).row Then
                 warningString = str.subInStr("Worksheet_Change on @1, target address is header, ignore", ws0.name)
                 Debug.Print warningString
-                main.SafeStoreCurrentState
+                main.SafeStoreCurrentState ws0
                 Application.ScreenUpdating = True
                 Application.EnableEvents = True
                 Exit Sub
@@ -99,7 +99,7 @@ On Error GoTo handle_error
                      If main.P_DEBUG Then
                         Debug.Print "target is multiple cells, dont do anything: " & target_address
                      End If
-                   main.SafeStoreCurrentState
+                   main.SafeStoreCurrentState ws0
                    Application.ScreenUpdating = True
                    Application.EnableEvents = True
                    Exit Sub
@@ -147,7 +147,7 @@ On Error GoTo handle_error
     
 clean_up:
     ' safely store the resulting end state
-    main.SafeStoreCurrentState
+    main.SafeStoreCurrentState ws0
     Application.EnableEvents = True
     Application.ScreenUpdating = True
     Exit Sub
@@ -157,7 +157,11 @@ handle_error:
     Application.EnableEvents = True
     Application.ScreenUpdating = True
     ws0.Activate
-    MsgBox "Onbekende fout opgetreden!", vbCritical     'Show error to user but dont break to VB editor
+    If main.P_DEBUG Then
+       Err.Raise Err
+    Else
+       MsgBox "Onbekende fout opgetreden!", vbCritical     'Show error to user but dont break to VB editor
+    End If
 End Sub
 
 

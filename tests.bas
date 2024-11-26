@@ -15,10 +15,15 @@ Dim IsahSheet As Worksheet, BulkSheet As Worksheet
 Const P_RELEASE As Boolean = True
 
 Sub test_all()
+
+GoTo start_test
+
     ' 0. Initialize:
+    ThisWorkbook.Activate
     tests.set_database tests.testdatabase
+    tests.set_init_capgrp_sheets
     tests.test_btn_clear_sheet
-    
+
     ' 1. IMPORT DATE (overhalen orders): INPUT PRODWK29 LN1
     tests.set_input_isah_to_wk29_ln1
     tests.test_btn_import_art_ln1
@@ -30,14 +35,13 @@ Sub test_all()
     tests.test_btn_import_art_all
     tests.test_btn_import_bulk
     tests.test_bulk_sheet_values
-    'Exit Sub
+
     ' 3. ADD/REMOVE/MUTATE/PRINT capgrp LN1 orders
     tests.test_prodwk29_ln1
     
     ' 4. ISAH import/export
-    If testdatabase = "JKR" Or testdatabase = "JKR2" Then
-       tests.insert_update_isah_testdata_tables
-    End If
+    tests.test_workbook_connection 'workbook connection is needed for database operations
+    tests.insert_update_isah_testdata_tables
     tests.test_isah_staging_ln1
     tests.test_isah_imports
     tests.test_isah_export
@@ -48,6 +52,13 @@ Sub test_all()
     ' 6. test adding multiple new capgrps
     tests.test_set_new_capgrps
     
+    ' 7. test add new orders
+    tests.test_add_new_orders
+
+    ' 8. test week 29: ISAH import export
+    tests.test_isah_wk29_import_export
+    
+start_test:
     If P_RELEASE Then
        tests.set_for_release
     End If
@@ -56,23 +67,76 @@ Exit Sub
 
 End Sub
 
-Sub set_input_isah_to_wk46_new_capgrps()
-    Call tests.set_input_isah(wsName:="TESTMULTIFILL_ISAH_WK46_LNXX")
+Sub test_isah_wk29_import_export()
+'GoTo clean_up
+    main.btn_clear_sheet_Click
+    tests.set_input_isah_to_wk29
+    main.btn_import_art_Click
+    tests.insert_isah_testdata_wk29
+    main.btn_isah_database_export_Click
+    
+clean_up:
+    
 End Sub
 
 Sub test_set_new_capgrps()
    'new worksheets
-   w.delete_worksheet "LN22"
-   w.delete_worksheet "LN24"
-   w.delete_worksheet "LN26"
+   w.deleteWorksheets "LN 6", "NW", "PROM", "INPK", "LN20", "LN22", "LN24", "LN26"
+   
    tests.set_input_isah_to_wk46_new_capgrps
    main.btn_add_capgrp_sheets_Click
+
    Debug.Assert w.sheet_exists("LN22") And w.sheet_exists("LN24") And w.sheet_exists("LN26")
+   Debug.Assert w.sheet_exists("NW") And w.sheet_exists("PROM") And w.sheet_exists("INPK")
    
    ' clear ws
-   w.delete_worksheet "LN22"
-   w.delete_worksheet "LN24"
-   w.delete_worksheet "LN26"
+   w.deleteWorksheets "LN 6", "NW", "PROM", "INPK", "LN20", "LN22", "LN24", "LN26"
+End Sub
+
+Sub test_add_new_orders()
+    Application.ScreenUpdating = False
+    tests.set_input_isah_to_wk48
+    tests.set_input_new_orders_to_wk48
+    
+    ' check for new capgrps and add then
+    main.btn_add_capgrp_sheets_Click
+    
+    ' set LN1 to week 48
+    main.set_capgrp_weeknumber "LN 1", 48
+    
+    ' import all orders to capgrp tabs
+    main.btn_import_art_Click
+    
+    ' add new orders to capgrp tab
+    main.btn_add_new_orders_Click
+    
+    ' now check if each of the records in NIEUW is in the correct sheet
+    Dim new_orders_rng As Range, record As Dictionary, Records As collection, capgrp As String, orders_rng As Range
+    Set new_orders_rng = main.get_new_orders_range()
+    Set Records = r.getRowsAsRecords(new_orders_rng)
+    
+    capgrp_ = ""
+    For Each record In Records
+        capgrp = record.item("Cap.Grp")
+        If capgrp_ <> capgrp Then
+           Debug.Print "checking new orders for: " & capgrp
+           Set orders_rng = main.get_orders_range(capgrp)
+        End If
+        
+        If orders_rng.Rows.count <= 1 Then
+           GoTo nx
+        End If
+
+        ' check productieorder in orders_rng.productieorder
+        productie_orders = r.get_column_values(orders_rng, "Productieorder")
+        chk_productie_order = record.item("Productieorder")
+        a.printArray productie_orders
+        Debug.Assert u.InList(CLng(chk_productie_order), productie_orders)
+        
+        capgrp_ = capgrp
+nx:
+    Next
+    Application.ScreenUpdating = True
 End Sub
 
 Sub test()
@@ -89,12 +153,17 @@ Sub set_database(database_name As String)
 End Sub
 
 Sub set_for_release()
-    ' disable events
-    Application.EnableEvents = False
+    ' remove invalid names
+    r.cleanNamesWithReferenceError ThisWorkbook
+    
+    ' set database
     ThisWorkbook.Sheets(main.CONTROL_SHEET_NAME).Range(main.DATABASE_DROPDOWN_ADDR).value = tests.release_database
     
+    ' disable events
+    Application.EnableEvents = False
+    
     ' hide testing sheets
-    w.hideWorksheets "tests", "TEST_DATA", "base", "planning", "test"
+    w.hideWorksheets "tests", "TEST_DATA", "base", "planning", "test", "CAPGRP", "TESTMULTIFILL_ISAH_WK46_LNXX", "TESTMULTIFILL_ISAH_WK48", "TESTMULTIFILL_NEW_ORDERS_WK48", "TESTMULTIFILL_ISAH_PRODWK29"
     
     ' clear input and orders
     tests.test_btn_clear_sheet
@@ -104,6 +173,35 @@ Sub set_for_release()
     ' renable events
     Application.EnableEvents = True
     ThisWorkbook.Save
+End Sub
+
+Sub set_init_capgrp_sheets()
+    Dim init_capgrp_sheet_names As collection: Set init_capgrp_sheet_names = clls.toCollection("LN 1;LN 2;LN 3;LN 5;LN 9;LN10;LN14;LN15;LN18;LN19", ";")
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    
+    ' remove existing capgrp sheets
+    For Each wsName In init_capgrp_sheet_names
+        w.delete_worksheet wsName, ThisWorkbook
+    Next
+    
+    ' cleanNamesWithReferenceError(optional workbook) => in workbook delete Names with #REF error
+    r.cleanNamesWithReferenceError ThisWorkbook
+    
+    ' create new ones and try to activate
+    main.init_capgrp_sheets capgrp_sheet_names:=init_capgrp_sheet_names
+    Application.EnableEvents = True
+    For Each wsName In init_capgrp_sheet_names
+        ' try to active capgrp sheet
+        ThisWorkbook.Sheets(wsName).Activate
+    Next
+    
+    Worksheets(main.CONTROL_SHEET_NAME).Activate
+    
+exit_sub:
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+    
 End Sub
 
 Sub test_btn_clear_sheet()
@@ -319,8 +417,25 @@ Sub test_prodwk29_ln1()
     ' count the Artikelen on LN1
     Debug.Assert WorksheetFunction.CountA(main.get_orders_range("LN 1").columns(articles_column_index)) = NUMBER_ARTICLES_LN1
     
+    'export LN1
+    Dim pdf_path As String
+    main.btn_export_pdf_Click
+    pdf_path = main.get_capgrp_print_location("LN 1")
+    Debug.Assert fs.pathExist(pdf_path)
+    fs.deleteFilePath pdf_path
+    
     'print LN1
     main.btn_print_dates_Click
+    
+End Sub
+
+Sub test_pdf_export()
+    Dim pdf_path As String
+    ThisWorkbook.Worksheets("LN 1").Activate
+    main.btn_export_pdf_Click
+    pdf_path = main.get_capgrp_print_location("LN 1")
+    Debug.Assert fs.pathExist(pdf_path)
+    fs.deleteFilePath pdf_path
     
 End Sub
 
@@ -517,7 +632,6 @@ Sub test_buttons_capgrp()
 
 End Sub
 
-
 ' DATABASE TESTS
 Sub test_multifill_rds()
     Dim connstr As String: connstr = "Driver={ODBC Driver 11 for SQL Server};Server=MF-ERP\MSSQLSERVER_ISAH;User Id=PlanningExcel;Password=a2AZCY8mkr&Qt5#LbB"
@@ -601,8 +715,7 @@ Sub update_isah_testdata(source_table As String, target_table As String, set_col
 End Sub
 
 Sub insert_update_isah_testdata_tables()
-    'TODO: use function a.InList(dbprofile, JKR;JKR2)
-    If main.getISAHProfileName() <> "JKR" And main.getISAHProfileName() <> "JKR2" Then
+    If Not u.InList(main.getISAHProfileName(), "JKR;JKR2") Then
        Err.Raise 1001, "check profile name"
     End If
     insert_isah_testdata "[T_ProductionHeader$]", "[Testmultifill].[dbo].[T_ProductionHeader_TEST]"
@@ -612,13 +725,22 @@ Sub insert_update_isah_testdata_tables()
     update_isah_testdata "[Update_T_ProductionHeader$]", "[Testmultifill].[dbo].[T_ProductionHeader_TEST]", "StartDate;EndDate", "ProdHeaderDossierCode"
 End Sub
 
+Sub insert_isah_testdata_wk29()
+    If Not u.InList(main.getISAHProfileName(), "JKR;JKR2") Then
+       Err.Raise 1001, "check profile name"
+    End If
+    insert_isah_testdata "[T_ProductionHeader_wk29$]", "[Testmultifill].[dbo].[T_ProductionHeader_TEST]"
+    insert_isah_testdata "[T_ProdBillOfOper_wk29$]", "[Testmultifill].[dbo].[T_ProdBillOfOper_TEST]"
+    insert_isah_testdata "[T_ProdBillOfMat_wk29$]", "[Testmultifill].[dbo].[T_ProdBillOfMat_TEST]"
+End Sub
+
 Sub test_isah_staging_ln1()
     Dim ordersStagingRng As Range
     main.isah_export_stage_orders
     'check the number of product orders for LN1
     ordersStagingArr = r.get_range("isah_staging_orders_range")
     ordersStagingArrLN1 = a.QueryArray(ordersStagingArr, "CAPGRP", "LN 1")
-    num_rows = a.num_array_rows(ordersStagingArrLN1)
+    num_rows = a.numArrayRows(ordersStagingArrLN1)
     Debug.Assert num_rows = tests.NUMBER_ARTICLES_LN1
     
 End Sub
@@ -627,6 +749,19 @@ Sub set_input_isah(wsName)
     Dim ws0 As Worksheet, ws1 As Worksheet
     Set wb = ThisWorkbook
     Set ws1 = wb.Sheets(main.INPUT_ISAH_SHEET)
+    w.clearWorksheet ws1
+    Set ws0 = wb.Sheets(wsName)
+    Set rng0 = r.expand_range("A1", ws0)
+    r.copy_range rng0, "A1", ws1
+    
+    'format the columns
+    main.format_isah_input_range
+End Sub
+
+Sub set_new_orders_data(wsName)
+    Dim ws0 As Worksheet, ws1 As Worksheet
+    Set wb = ThisWorkbook
+    Set ws1 = wb.Sheets(main.ISAH_NEW_ORDERS_SHEET_NAME)
     w.clearWorksheet ws1
     Set ws0 = wb.Sheets(wsName)
     Set rng0 = r.expand_range("A1", ws0)
@@ -645,6 +780,19 @@ Sub set_input_isah_to_wk29_bulk()
     Call tests.set_input_isah(wsName:="TESTMULTIFILL_ISAH_WK29_U000")
 End Sub
 
+Sub set_input_isah_to_wk46_new_capgrps()
+    Call tests.set_input_isah(wsName:="TESTMULTIFILL_ISAH_WK46_LNXX")
+End Sub
+
+Sub set_input_isah_to_wk48()
+    Call tests.set_input_isah(wsName:="TESTMULTIFILL_ISAH_WK48")
+End Sub
+
+Sub set_input_new_orders_to_wk48()
+    Call tests.set_new_orders_data(wsName:="TESTMULTIFILL_NEW_ORDERS_WK48")
+End Sub
+
+
 Sub test_queries()
 Dim conn0 As ADODB.Connection, sql0 As String
 Set conn0 = db.openExcelConn(ThisWorkbook)
@@ -655,17 +803,26 @@ Set rs0 = db.queryFromWorkbook(sql0, conn0)
 conn0.Close
 End Sub
 
-
 Sub test_last_art_capgrp()
     Dim col0 As collection
-    Set col0 = a.as_collection(main.get_art_capgrp())
+    Set col0 = a.as_collection(main.get_art_capgrps())
     Debug.Print col0.item(col0.count)
 End Sub
 
 Sub test_set_database()
 tests.set_database "JKR"
 Debug.Print main.getISAHconnstr, main.getISAHdbname
+End Sub
 
-
+' Workbook connection tests
+Sub test_workbook_connection()
+    Debug.Assert WorkBookConnection Is Nothing
+    Debug.Print main.getWorkbookConnection().Attributes
+    Set wbconn = main.getWorkbookConnection()
+    Debug.Assert wbconn Is WorkBookConnection
+    wbconn.Close
+    Set wbconn = Nothing
+    Set WorkBookConnection = Nothing
+    Debug.Assert WorkBookConnection Is Nothing
 End Sub
 

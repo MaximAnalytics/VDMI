@@ -1,10 +1,11 @@
 ' queries for ISAH database
-Function check_ProdBillOfMat(bom_table_name As String) As String
+Function check_ProdBillOfMat(bom_table_name As String, prodheader_dossier_code_list As String) As String
     Dim sql0 As String
     sql0 = "SELECT CAST(ProdHeaderDossierCode AS varchar) AS ProdHeaderDossierCode, MIN(RequiredDate) as min_bom_required_date, " & _
-    "MAX(RequiredDate) As max_bom_required_date FROM @1 group by ProdHeaderDossierCode " & _
+    "MAX(RequiredDate) As max_bom_required_date FROM @1 WHERE ProdHeaderDossierCode in @2" & _
+    "GROUP BY ProdHeaderDossierCode " & _
     "ORDER BY ProdHeaderDossierCode"
-    sql0 = str.subInStr(sql0, bom_table_name)
+    sql0 = str.subInStr(sql0, bom_table_name, prodheader_dossier_code_list)
     check_ProdBillOfMat = sql0
 End Function
 

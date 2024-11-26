@@ -213,6 +213,22 @@ Public Sub deleteFile(file_name As String, path As String)
     End If
 End Sub
 
+Public Sub deleteFilePath(file_path As String)
+    Dim fso As Object
+
+    ' Create the file system object
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    ' Check if the file exists
+    If fso.FileExists(file_path) Then
+        ' Delete the file
+        fso.deleteFile file_path
+        Debug.Print "File '" & file_path & "' deleted."
+    Else
+        Debug.Print "File path '" & file_path & "' not found in."
+    End If
+End Sub
+
 '2 vb modules
 Sub exportModuleCode(module_name As String, path As String, Optional extension As String = "")
     Dim module_code As String
@@ -277,7 +293,7 @@ Sub exportModuleCodes(module_names As String, path As String, Optional extension
     
     ' Loop through each module name in the array and export its code
     For i = LBound(moduleNameArray) To UBound(moduleNameArray)
-        exportModuleCode CStr(moduleNameArray(i)), path, extension:=extension
+        fs.exportModuleCode CStr(moduleNameArray(i)), path, extension:=extension
     Next i
 End Sub
 
@@ -550,3 +566,7 @@ Public Sub updateCodeModules(module_files As String, path As String)
        fs.updateCodeModule CStr(moduleNameArray(i)), path
     Next i
 End Sub
+
+Function ThisWorkbookSize()
+ThisWorkbookSize = FileLen(ThisWorkbook.FullName) / 1024
+End Function
