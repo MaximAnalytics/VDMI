@@ -183,3 +183,5 @@ Function set_date_timepart(date0 As Date, Optional timepart As String = "00:00")
     set_date_timepart = datePart + timepart
 End Function
 
+
+

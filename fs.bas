@@ -3,6 +3,10 @@
 '2 vb modules
 
 Sub tests_fs()
+    Dim ws As Worksheet, wb As Workbook
+    Set wb = ThisWorkbook
+    Set ws = w.get_or_create_worksheet("test", wb)
+
     '1 utilities
     Debug.Assert pathExist(ThisWorkbook.path) = True
     Debug.Assert pathExist("fakepath") = False
@@ -70,11 +74,28 @@ Sub tests_fs()
     fs.updateCodeModule testFileName, testFilePath
     Debug.Assert fs.moduleExist(testModuleName) = True
     
+    ' add/remove procedures from module
+    fs.addProcedureToModule "Sub test;debug.print 1;end sub", "test", "test"
+    fs.removeProcedureFromModule "test", "test"
+    
     'clean up
     fs.deleteCodeModule testModuleName
     fs.deleteFile testFileName, testFilePath
+    w.delete_worksheet "test"
     
     Debug.Print "tests_fs completed!"
+End Sub
+
+Sub test()
+    Dim ws As Worksheet, wb As Workbook
+    Set wb = ThisWorkbook
+    Set ws = w.get_or_create_worksheet("test", wb)
+    
+    fs.addProcedureToModule "Sub test;debug.print 1;end sub", "test", "test"
+    fs.removeProcedureFromModule "test", "test"
+    
+    fs.exportModuleCodes "fs.bas;ctr.bas", zz_env.getVDMIGithub()
+    
 End Sub
 
 '1 utilities
@@ -231,18 +252,25 @@ End Sub
 
 '2 vb modules
 Sub exportModuleCode(module_name As String, path As String, Optional extension As String = "")
-    Dim module_code As String
+    Dim module_code As String, actual_module_name As String, module_extension As String
     Dim file_path As String
     Dim file_number As Integer
     
+    module_parts = Split(module_name, ".")
+    If UBound(module_parts) > LBound(module_parts) Then
+        module_name = module_parts(0)
+        extension = module_parts(1)
+    End If
+    
     ' Get the module code
-    module_code = GetModuleCode(module_name)
+    actual_module_name = findModuleName(module_name)
+    module_code = GetModuleCode(actual_module_name)
     
     ' Determine the module type and set the default extension if not provided
-    module_type = TypeName(ThisWorkbook.VBProject.VBComponents(module_name))
-    If extension = "" Then
+    module_type = TypeName(ThisWorkbook.VBProject.VBComponents(actual_module_name))
+    If module_extension = "" Then
         If module_type = "VBComponent" Then
-            extension = IIf(ThisWorkbook.VBProject.VBComponents(module_name).Type = vbext_ct_ClassModule, "cls", "bas")
+            extension = IIf(ThisWorkbook.VBProject.VBComponents(actual_module_name).Type = vbext_ct_ClassModule, "cls", "bas")
         Else
             extension = "txt"
         End If
@@ -266,11 +294,12 @@ Sub exportModuleCode(module_name As String, path As String, Optional extension A
 End Sub
 
 Function GetModuleCode(module_name As String) As String
-    Dim module_code As String
+    Dim module_code As String, actual_module_name As String
     Dim module_object As Object
     
     ' Get the module object
-    Set module_object = ThisWorkbook.VBProject.VBComponents(module_name).codeModule
+    actual_module_name = findModuleName(module_name)
+    Set module_object = ThisWorkbook.VBProject.VBComponents(actual_module_name).codeModule
     
     ' Get the module code
     module_code = module_object.Lines(1, module_object.CountOfLines)
@@ -496,7 +525,7 @@ End Sub
 ' @param module_file_name The name of the module file (including extension) to update or import.
 ' @param path The file path where the module file is located.
 Public Sub updateCodeModule(module_file_name As String, path As String)
-    Dim module_name As String
+    Dim module_name As String, actual_module_name As String
     Dim module_code_string As String
     Dim file_path As String
     Dim file_number As Integer
@@ -513,6 +542,8 @@ Public Sub updateCodeModule(module_file_name As String, path As String)
     module_name = left(module_file_name, InStrRev(module_file_name, ".") - 1)
     
     ' Check if the module exists in the current project
+    module_exists = fs.moduleExist(module_name, False)
+    
     On Error Resume Next
     module_exists = Not ThisWorkbook.VBProject.VBComponents(module_name) Is Nothing
     On Error GoTo 0
@@ -543,10 +574,11 @@ Public Sub updateCodeModule(module_file_name As String, path As String)
         ' If the module exists, update its code with the lines from the module file
         
         ' Update the module code
-        fs.putModuleCode module_name, module_code_string
+        actual_module_name = fs.findModuleName(module_name)
+        fs.putModuleCode actual_module_name, module_code_string
         
         ' Message
-        Debug.Print "Module '" & module_name & "' updated with code from '" & file_path & "'."
+        Debug.Print "Module '" & actual_module_name & "' updated with code from '" & file_path & "'."
     End If
 End Sub
 
@@ -567,6 +599,88 @@ Public Sub updateCodeModules(module_files As String, path As String)
     Next i
 End Sub
 
-Function ThisWorkbookSize()
-ThisWorkbookSize = FileLen(ThisWorkbook.FullName) / 1024
-End Function
+' This subroutine removes a procedure (Sub or Function) from a specified module in the VB project.
+'
+' @param proc_name The name of the procedure to remove.
+' @param module_name The name of the module from which the procedure should be removed.
+Public Sub removeProcedureFromModule(proc_name As String, module_name As String)
+    Dim module_object As Object
+    Dim code_module As Object
+    Dim start_line As Long
+    Dim end_line As Long
+    Dim line_text As String
+    Dim found As Boolean
+    
+    ' Get the module object
+    Set module_object = ThisWorkbook.VBProject.VBComponents(fs.findModuleName(module_name))
+    Set code_module = module_object.codeModule
+    
+    ' Initialize variables
+    found = False
+    start_line = 1
+    
+    ' Loop through each line in the module to find the procedure
+    Do While start_line <= code_module.CountOfLines
+        line_text = Trim(code_module.Lines(start_line, 1))
+        
+        ' Check if the line contains the procedure definition
+        If (LCase(left(line_text, 3)) = "sub" Or LCase(left(line_text, 8)) = "function" Or LCase(left(line_text, 11)) = "private sub" Or LCase(left(line_text, 16)) = "private function") And InStr(line_text, proc_name) > 0 Then
+            found = True
+            Exit Do
+        End If
+        
+        start_line = start_line + 1
+    Loop
+    
+    ' If the procedure is found, determine the end line and delete the lines
+    If found Then
+        end_line = start_line
+        
+        ' Find the end of the procedure
+        Do While end_line <= code_module.CountOfLines
+            line_text = Trim(code_module.Lines(end_line, 1))
+            If LCase(line_text) = "end sub" Or LCase(line_text) = "end function" Then
+                Exit Do
+            End If
+            end_line = end_line + 1
+        Loop
+        
+        ' Delete the procedure lines
+        code_module.DeleteLines start_line, end_line - start_line + 1
+        Debug.Print "Procedure '" & proc_name & "' removed from module '" & module_name & "'."
+    Else
+        Debug.Print "Procedure '" & proc_name & "' not found in module '" & module_name & "'."
+    End If
+End Sub
+
+' This subroutine adds a procedure to a specified module in the VB project.
+' It first removes any existing procedure with the same name, then adds the new procedure code.
+'
+' @param codelines A string containing the code lines of the procedure, separated by the specified separator.
+' @param proc_name The name of the procedure to add.
+' @param module_name The name of the module to which the procedure should be added.
+' @param sep (Optional) The separator used to split the code lines. Default is ";".
+Public Sub addProcedureToModule(codelines As String, proc_name As String, module_name As String, Optional sep As String = ";")
+    Dim module_object As Object
+    Dim code_module As Object
+    Dim code_array As Variant
+    Dim i As Integer
+    
+    ' Remove the existing procedure if it exists
+    removeProcedureFromModule proc_name, module_name
+    
+    ' Get the module object
+    Set module_object = ThisWorkbook.VBProject.VBComponents(fs.findModuleName(module_name))
+    Set code_module = module_object.codeModule
+    
+    ' Split the code lines into an array using the specified separator
+    code_array = Split(codelines, sep)
+    
+    ' Add the new procedure code to the module
+    For i = LBound(code_array) To UBound(code_array)
+        code_module.InsertLines code_module.CountOfLines + 1, Trim(code_array(i))
+    Next i
+    
+    Debug.Print "Procedure '" & proc_name & "' added to module '" & module_name & "'."
+End Sub
+

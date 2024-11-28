@@ -11,6 +11,10 @@
 ' 3. Objectlist functions
 
 Sub test_utilities()
+    Dim ws As Worksheet, wb As Workbook
+    Set wb = ThisWorkbook
+    Set ws = w.get_or_create_worksheet("test", ThisWorkbook)
+    
     ' Test isnull function
     Debug.Assert IsNull(Empty) = True
     Debug.Assert IsNull("") = True
@@ -48,15 +52,43 @@ Sub test_utilities()
     Dim ws0 As Worksheet, rng0 As Range
     Set ws0 = w.get_or_create_worksheet("test_ranges", ThisWorkbook)
     Set rng0 = ws0.Cells(1, 1)
+    
     Debug.Assert u.hasAttr(rng0, "value")
+    
     Call u.setAttr(rng0, "value", 1)
     Debug.Assert u.getAttr(rng0, "value") = 1
-    
+
     ' Test Objectlist functions
     Dim wsNames As collection
     Set wsNames = u.GetObjectPropertyList(Worksheets, "name")
     Debug.Assert clls.item_exists("test_ranges", wsNames)
-    w.delete_worksheet "test_ranges", ThisWorkbook
+    
+    ' create names to test
+    r.create_named_range "test_name1", ws.name, "A1"
+    r.create_named_range "test_name2", ws.name, "A2"
+    r.create_named_range "test_name3", ws.name, "A3"
+    
+    Debug.Assert r.name_exist("test_name1") = True And r.name_exist("test_name2") = True And r.name_exist("test_name3") = True
+    
+    ' Test filtering by prop_values
+    Set filteredNames = u.filterObjectsOnProperty(wb.Names, prop_name:="Name", prop_values:=Array("test_name1", "test_name2"))
+    Debug.Assert filteredNames.count = 2
+    Exit Sub
+    ' Test filtering by prop_pattern
+    Set filteredNames = u.filterObjectsOnProperty(wb.Names, prop_name:="Name", prop_pattern:="_name3|_name4")
+    Debug.Assert filteredNames.count = 1
+    
+    r.deleteNames Array("test_name1", "test_name2", "test_name3")
+    
+    Debug.Assert Not (r.name_exist("test_name1") = True And r.name_exist("test_name2") = True And r.name_exist("test_name3") = True)
+        
+    ' clean up
+    w.deleteWorksheets "test_ranges", "test"
+End Sub
+
+Sub test()
+
+
 End Sub
 
 ' Logical checks: if_empty_missing=> checks if x is empty, missing, nothing or empty string
@@ -237,7 +269,11 @@ Sub printTypename(x)
 End Sub
 
 ' 2 Object attributes: getAttr, hasAttr, setAttr
-Public Function getAttr(obj As Object, attrName As String) As Variant
+Public Function getAttr(obj, attrName As String) As Variant
+    If Not (VarType(obj) = vbObject Or u.InList(TypeName(obj), Array("Range", "Name"))) Then
+       Err.Raise 1003, "getAttr", "obj is not object but vartype: " & VarType(obj)
+    End If
+    
     On Error GoTo ErrHandler
     getAttr = CallByName(obj, attrName, VbGet)
     Exit Function
@@ -312,10 +348,58 @@ Public Function GetObjectPropertyList(objectList, propName As String) As collect
     Set GetObjectPropertyList = result
 End Function
 
-Sub test()
-Dim col As New collection
-Dim params() As Variant
-ReDim params(0 To 0)
-params(0) = col
-End Sub
+Function filterObjectsOnProperty(objects As Variant, Optional prop_name As String = "Name", Optional prop_values As Variant, Optional prop_pattern As String = "") As collection
+    ' This function filters a list of VBA objects based on a specified property.
+    ' Parameters:
+    '   - objects: A list of VBA objects to filter.
+    '   - prop_name: The name of the property to filter on. Defaults to "Name".
+    '   - prop_values: (Optional) A list of property values to filter by.
+    '   - prop_pattern: (Optional) A pattern to match the property value against.
+    '
+    ' Returns: A collection of objects that match the specified property values or pattern.
+    
+    Dim result As New collection
+    Dim obj As Variant
+    Dim propValue As Variant
+    Dim colPropValues As collection
+    Dim regex As Object
+    
+    ' Convert prop_values to a collection if provided
+    If Not IsMissing(prop_values) Then
+        Set colPropValues = clls.toCollection(prop_values)
+    End If
+    
+    ' Initialize regex if prop_pattern is provided
+    If prop_pattern <> "" Then
+        Set regex = CreateObject("VBScript.RegExp")
+        regex.pattern = prop_pattern
+        regex.IgnoreCase = True
+    End If
+    
+    ' Loop through each object in the list
+    For Each obj In objects
+        ' Get the property value
+        propValue = u.getAttr(obj, prop_name)
+        
+        ' Check if the property value is in the provided values
+        If Not IsMissing(prop_values) Then
+            If clls.item_exists(propValue, colPropValues) Then
+                result.Add obj
+            End If
+        ' Check if the property value matches the pattern
+        ElseIf prop_pattern <> "" Then
+            If regex.test(propValue) Then
+                result.Add obj
+            End If
+        Else
+            ' Raise an error if neither prop_values nor prop_pattern is provided
+            Err.Raise vbObjectError + 1, "filterObjectsOnProperty", "Either prop_values or prop_pattern must be provided"
+        End If
+    Next obj
+    
+    ' Return the filtered collection
+    Set filterObjectsOnProperty = result
+End Function
+
+
 

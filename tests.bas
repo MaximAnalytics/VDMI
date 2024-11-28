@@ -17,6 +17,7 @@ Const P_RELEASE As Boolean = True
 Sub test_all()
 
 GoTo start_test
+start_test:
 
     ' 0. Initialize:
     ThisWorkbook.Activate
@@ -51,14 +52,13 @@ GoTo start_test
     
     ' 6. test adding multiple new capgrps
     tests.test_set_new_capgrps
-    
+
     ' 7. test add new orders
     tests.test_add_new_orders
 
     ' 8. test week 29: ISAH import export
     tests.test_isah_wk29_import_export
     
-start_test:
     If P_RELEASE Then
        tests.set_for_release
     End If
@@ -182,7 +182,8 @@ Sub set_init_capgrp_sheets()
     
     ' remove existing capgrp sheets
     For Each wsName In init_capgrp_sheet_names
-        w.delete_worksheet wsName, ThisWorkbook
+        'w.delete_worksheet wsName, ThisWorkbook
+        main.remove_capgrp_sheet CStr(wsName)
     Next
     
     ' cleanNamesWithReferenceError(optional workbook) => in workbook delete Names with #REF error
@@ -825,4 +826,6 @@ Sub test_workbook_connection()
     Set WorkBookConnection = Nothing
     Debug.Assert WorkBookConnection Is Nothing
 End Sub
+
+
 

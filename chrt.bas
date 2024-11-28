@@ -85,8 +85,8 @@ Sub init_chart()
     
     ' Create the chart
     Set cht = ws.ChartObjects.Add(left:=ws.Cells(CHART_ROW_START, CHART_COL_START).left, _
-                                   Top:=ws.Cells(CHART_ROW_START, CHART_COL_START).Top, _
-                                   Width:=CHART_WIDTH, Height:=CHART_HEIGHT)
+                                   top:=ws.Cells(CHART_ROW_START, CHART_COL_START).top, _
+                                   width:=CHART_WIDTH, Height:=CHART_HEIGHT)
     cht.name = chart_name
     cht.chart.ChartType = xlBarStacked
     cht.chart.HasLegend = False
@@ -206,5 +206,9 @@ End Sub
 '    'Set the fill of the first series to none
 '    ActiveChart.SeriesCollection(1).Format.Fill.Visible = msoFalse
 'End Sub
+
+
+
+
 
 

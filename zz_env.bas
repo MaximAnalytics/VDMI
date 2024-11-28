@@ -6,12 +6,27 @@ Global Const MSSQL_HOME_CONN_STR = "Driver={ODBC Driver 17 for SQL Server};Serve
 
 ' code modules
 Global Const MODULES_TO_EXPORT = "a;chrt;clls;ctr;db;dict;dt;fs;m;os;r;str;u;vb;w;zz_env;Timer"
-Global Const VDMI_MODULES_TO_EXPORT = "main;main_isah_queries;database_control;state_control;ThisWorkbook;Sheet8;Sheet21;tests"
+Global Const VDMI_MODULES_TO_EXPORT = "main;main_isah_queries;database_control;state_control;ThisWorkbook;Sheet8;Sheet21;tests;NIEUW;Template"
 Global Const MODULES_TO_IMPORT = "a.bas;chrt.bas;clls.bas;ctr.bas;db.bas;dict.bas;dt.bas;m.bas;os.bas;r.bas;str.bas;u.bas;vb.bas;w.bas;Timer.cls"
-Global Const VDMI_MODULES_TO_IMPORT = "main.bas;main_isah_queries.bas;database_control.bas;state_control.bas;ThisWorkbook.bas;Sheet8.bas;Sheet21.bas;tests.bas"
+Global Const VDMI_MODULES_TO_IMPORT = "main.bas;main_isah_queries.bas;database_control.bas;state_control.bas;ThisWorkbook.bas;Sheet8.bas;Sheet21.bas;tests.bas;NIEUW.bas;Template.bas"
 
 Sub test_zz_env()
     Debug.Assert zz_env.getVDMIGithub() = "C:\Users\JoelKroodsma\Documents\GitHub\VDMI"
+End Sub
+
+Sub build_vdmi_template()
+    'zz_env.update_vb_codemodule_code
+    'remove all capgrp sheets
+    For Each capgrp_sheet In main.get_capgrp_sheet_names()
+        w.deleteWorksheets capgrp_sheet
+    Next
+    
+    'clean invalid names
+    r.cleanNamesWithReferenceError
+    
+    'clear data
+    main.btn_clear_sheet_Click
+    
 End Sub
 
 ' export modules to local Github repo
@@ -24,10 +39,6 @@ End Sub
 Sub update_vb_codemodule_code()
     fs.updateCodeModules MODULES_TO_IMPORT, getVDMIGithub()
     fs.updateCodeModules VDMI_MODULES_TO_IMPORT, getVDMIGithub()
-End Sub
-
-Sub import_codemodule()
-    fs.updateCodeModule "wsfunctions.bas", getVDMIGithub()
 End Sub
 
 ' import-update modules from passed list

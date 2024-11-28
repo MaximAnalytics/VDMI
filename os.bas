@@ -137,3 +137,5 @@ Function getDocumentsPath() As String
     
     getDocumentsPath = wshShell.SpecialFolders("MyDocuments")
 End Function
+
+

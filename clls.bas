@@ -25,7 +25,7 @@
 'distinctItems(col0) => Returns a collection of distinct items from the input collection.
 
 Sub test_collection_functions()
-    Dim col As collection, col1 As collection, col0 As collection, complement0 As collection
+    Dim col As collection, col1 As collection, col0 As collection, complement0 As collection, col2 As collection
     
     ' subsetting
     ' Test pop function
@@ -55,6 +55,12 @@ Sub test_collection_functions()
     Set col1 = clls.toCollection("B,C,D")
     Set complement0 = clls.getComplementItems(col0, col1)
     Debug.Assert clls.collectionToString(complement0) = "C,D"
+    
+    Debug.Print clls.toCollection(clls.getCollection("A")).count, clls.toCollection(Array("A")).count, clls.toCollection("A").count
+    'Exit Sub
+    Debug.Assert clls.toCollection("A").count = clls.toCollection(Array("A")).count
+    Debug.Assert clls.toCollection(Array("A")).count = clls.toCollection(clls.getCollection("A")).count
+    
     
     ' 2. Transformations
     Set col = a.as_collection(Array("C", "B", "A", 1, 2, 3))
@@ -504,6 +510,8 @@ Function toCollection(x As Variant, Optional delim As String = ",") As collectio
         For i = LBound(x) To UBound(x)
             result.Add x(i)
         Next i
+    ElseIf TypeName(x) = "Collection" Then
+        Set result = x
     Else
         ' Raise an error if the input is not a string, array, or range
         Err.Raise vbObjectError + 1, "toCollection", "Invalid input type"
@@ -554,5 +562,6 @@ Function ItemsToCollection(ParamArray items()) As collection
     ' Return the collection with all items added
     Set ItemsToCollection = result
 End Function
+
 
 

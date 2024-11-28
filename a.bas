@@ -1877,3 +1877,5 @@ Function CrossJoinArrays(arr As Variant, vector As Variant) As Variant
     ' Return the cross-joined array
     CrossJoinArrays = resultArr
 End Function
+
+

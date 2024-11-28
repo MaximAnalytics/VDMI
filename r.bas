@@ -84,6 +84,9 @@
 ' copy_range(rng0, addr, ws) => Copies range to another location
 ' paste_array(arrayToCopy, addr, ws) => Pastes array to range
 
+' Printing, print area, page setup
+' SetCustomFooter
+
 ' Utilities
 ' str_to_array(str0) => Converts string to array
 ' get_array_len(arr) => Gets length of array
@@ -630,6 +633,29 @@ Sub updateNamedRangeWithValues(named_range_name As String, values As Variant, Op
     ' Update the named range
     r.update_named_range named_range_name, rng
 End Sub
+
+' Printing, page setup
+Sub SetCustomFooter(pgSetup As PageSetup, ctext, ltext, rtext)
+    ' This subroutine sets a custom two-line footer for the active worksheet.
+    ' The first line is centered and contains "text1".
+    ' The second line has "left text" aligned to the left and "right text" aligned to the right.
+    
+    ' Clear any existing footers
+    With pgSetup
+    .LeftFooter = ""
+    .CenterFooter = ""
+    .RightFooter = ""
+    ' Set the first line of the footer, centered
+    .CenterFooter = ctext
+    ' Set the second line of the footer with left and right aligned texts
+    ' The character Chr(10) is used to insert a line break
+    .LeftFooter = ltext & Chr(10)
+    .RightFooter = rtext & Chr(10)
+    
+    End With
+    
+End Sub
+
 
 ' Append a row to a named range and update the named range
 Sub AppendRowToNamedRange(range_name As String, Optional values As Variant, Optional overwrite As Boolean = True)
@@ -1286,6 +1312,32 @@ Sub cleanNamesWithReferenceError(Optional wb As Workbook)
             nm.Delete
         End If
     Next nm
+End Sub
+
+Sub deleteNames(items As Variant, Optional wb As Workbook)
+    ' This subroutine deletes named ranges from the workbook based on the provided items.
+    ' Parameters:
+    '   - items: A list of named range names to be deleted.
+    '   - wb: (Optional) The workbook from which to delete the named ranges. Defaults to the active workbook.
+    
+    Dim colItems As collection
+    Dim item As Variant
+    Dim wb0 As Workbook
+    
+    ' Convert items to a collection
+    Set colItems = clls.toCollection(items)
+    
+    ' Set the workbook to the specified workbook or the active workbook if not specified
+    Set wb0 = r.get_default_wb(wb)
+    
+    ' Loop through each item in the collection
+    For Each item In colItems
+        ' Check if the named range exists
+        If r.name_exist(CStr(item), wb:=wb0) Then
+            ' Delete the named range
+            wb0.Names(item).Delete
+        End If
+    Next item
 End Sub
 
 ' Addresses
@@ -2292,6 +2344,10 @@ Sub test_set_bold_row()
     Set orders_values_rng = r.get_range_values(orders_rng)
     orders_values_rng.Rows(overflow_row_index).Font.Bold = True
 End Sub
+
+
+
+
 
 
 

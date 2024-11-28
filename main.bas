@@ -39,6 +39,7 @@ Global Const ART_COLUMN As String = "Artikel"
 Global Const INPUT_ISAH_SHEET_SORT_KEY As String = "Cap.Grp,Bulkcode,Aantal,Flesformaat"
 Global Const COLUMNS_HIDE_FOR_PRINT As String = "Flesformaat,Sluiting"
 Global Const QTY_COLUMN As String = "Qty1"
+Global Const INPUT_CAPGRP_COLUMN_INDEX = 20
 
 ' LAYOUT
 Global Const ORDERS_RANGE_ADDR As String = "A14"
@@ -50,7 +51,7 @@ Global Const WORKDAYS_RANGE_NAME As String = "workdays_input_rng"
 Global Const WORKDAYS_RANGE_HEADER As String = ",06:00-08:00,08:15-10:15,10:30-12:30,13:00-15:00,15:15-17:15,17:45-20:15,20:30-23:00"
 Global Const MAP_WORKDAYS_TIMES_TO_LABEL As String = "06:00-08:00=B1;08:15-10:15=B2;10:30-12:30=B3;13:00-15:00=B4;15:15-17:15=B5;17:45-20:15=B6;20:30-23:00=B7"
 Global Const numberOfWorkTimeBlocks As Integer = 7
-Global Const XL_MAX_NUMBER_COLUMNS As Long = 256
+Global Const XL_MAX_NUMBER_COLUMNS As Long = 26
 
 Global Const WORKDAYS_RANGE_IDS As String = ",ma,di,woe,do,vrij,ma2,di2,woe2,do2,vrij2"
 Global Const WORKDAYS_RANGE_ADDRESS As String = "E2"
@@ -207,6 +208,7 @@ Dim rng0 As Range
 '    - init_control_sheet
 '    - layout_control_sheet_buttons
 '    - init_named_ranges
+'    - handle_input_capgrp
 
 ' 2. Data Retrieval and Processing:
 '    - get_isah_input_range
@@ -285,7 +287,6 @@ Dim rng0 As Range
 
 ' 5. Printing and Layout:
 '    - print_planning
-'    - SetCustomFooter
 '    - hide_columns_for_print
 '    - delete_columns_for_print
 
@@ -315,7 +316,10 @@ Dim rng0 As Range
 ' 9. Open Workbook Methods:
 '    - init_articles_per_pallet
 
-' 10. Utility and Helper Functions:
+' 10. Clean up functions
+'    - remove_capgrp_sheet
+
+' 11. Utility and Helper Functions:
 '    - create_yellow_gradient
 '    - create_green_red_gradient
 '    - get_color_palette
@@ -390,6 +394,12 @@ Sub init_capgrp_sheets(Optional capgrp_sheet_filter As String, Optional capgrp_s
      ' 5 initialize control buttons
      main.init_buttons capgrp, True
      
+     ' 5.1 position buttons
+     main.position_buttons capgrp
+     
+     ' 6 initialize extra info range
+     init_extra_info capgrp
+       
      ' freeze panes
      w.freeze_top_rows ThisWorkbook.Sheets(capgrp), main.N_TOP_ROWS_FREEZE
       
@@ -451,9 +461,9 @@ Sub calculate_volgnummer(capgrp As String, Optional volgnummer_index As Integer 
     Set orders_rng = main.get_orders_range(capgrp)
     
     'TODO figure out why volgnummer is not in range
-    If Not r.column_exist(orders_rng, "volgnummer") Then
-       Exit Sub
-    End If
+    'If Not r.column_exist(orders_rng, "volgnummer") Then
+    '   Exit Sub
+    'End If
     
     If orders_rng.count > 1 Then
         For i = 2 To orders_rng.Rows.count
@@ -605,79 +615,118 @@ End Function
 Sub init_print_file_range(capgrp As String)
     range_name = capgrp & "_input_print_location"
     r.create_named_range range_name, capgrp, main.PRINT_FILE_RANGE_ADDRESS, header_row:=",", id_row:=main.PRINT_FILE_RANGE_IDS, overwrite:=True
-    'r.get_range(range_name).Cells(2, 2).value = main.DEFAULT_PRINT_FILE_PATH & "planning_" & capgrp & ".pdf"
     main.set_capgrp_print_location capgrp
     r.get_range(range_name).Cells(2, 2).Interior.Color = main.INPUT_FIELD_COLOR
 End Sub
 
+Sub init_extra_info(capgrp As String)
+    ' Initializes the extra info range for a given capacity group (capgrp).
+    ' This subroutine creates a named range for extra info and sets its location.
+    '
+    ' Parameters:
+    ' capgrp - The name of the capacity group for which the extra info range is being initialized.
+    '
+    ' The subroutine performs the following actions:
+    ' - Creates a named range for the extra info.
+    ' - Sets the location of the extra info range.
+    Dim range_name As String
+    Dim extraInfoRange As Range, ws0 As Worksheet
+    
+    range_name = capgrp & "_extra_info"
+    r.create_named_range range_name, capgrp, main.PRINT_EXTRA_INFO_ADDRESS, overwrite:=True
+    
+    Set ws0 = ThisWorkbook.Sheets(capgrp)
+    Set extraInfoRange = ws0.Range(main.PRINT_EXTRA_INFO_ADDRESS)
+    
+    ' Simple extra info range
+    extraInfoRange.Merge
+    
+    ' Add borders to ExtraInfo
+    With extraInfoRange
+        .Borders.LineStyle = xlContinuous
+        .HorizontalAlignment = xlGeneral
+        .VerticalAlignment = xlTop
+    End With
+    
+End Sub
+
 Sub init_buttons(capgrp As String, Optional overwrite As Boolean = True)
-    Dim wb As Workbook
+    Dim wb As Workbook, capgrp_btn As String
     Set wb = ThisWorkbook
     Dim left_offset As Long
     left_offset = main.BTN_LEFT_OFFSET
     
-    ' first column of buttons: Overhalen orders, Regel toevoegen, Regel verwijderen,Ga Terug
-    ctr.add_button "btn_update_isah_data_" & capgrp, main.BTN_UPDATE_ISAH_ADDRESS, ws:=wb.Sheets(capgrp), _
-    overwrite:=overwrite, label:="Overhalen orders", h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
-    assign_macro_to_btn "btn_update_isah_data_" & capgrp, "btn_update_isah_data_Click"
+    capgrp_btn = Replace(capgrp, " ", "_")
     
-    ctr.add_button "btn_add_record_" & capgrp, main.BTN_ADD_RECORD_ADDR, ws:=wb.Sheets(capgrp), _
-    overwrite:=overwrite, label:="Regel toevoegen", h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
-    assign_macro_to_btn "btn_add_record_" & capgrp, "btn_add_record_Click"
+    ' first column of buttons: Overhalen orders, Regel toevoegen, Regel verwijderen, Ga Terug
+    ctr.createCmdButton "btn_update_isah_data_" & capgrp_btn, "Overhalen orders", ws:=wb.Sheets(capgrp), _
+    overwrite:=overwrite, length:=main.BTN_HEIGHT, width:=main.BTN_WIDTH
     
-    ctr.add_button "btn_delete_record_" & capgrp, main.BTN_DELETE_RECORD_ADDR, ws:=wb.Sheets(capgrp), _
-    overwrite:=overwrite, label:="Regel verwijderen", h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
-    assign_macro_to_btn "btn_delete_record_" & capgrp, "btn_delete_record_Click"
+    ctr.createCmdButton "btn_add_record_" & capgrp_btn, "Regel toevoegen", ws:=wb.Sheets(capgrp), _
+    overwrite:=overwrite, length:=main.BTN_HEIGHT, width:=main.BTN_WIDTH
     
-    ctr.add_button "btn_restore_prev_state_" & capgrp, main.BTN_RESTORE_PREV_STATE_ADDR, ws:=wb.Sheets(capgrp), _
-    overwrite:=overwrite, label:=main.BTN_RESTORE_PREV_STATE_LABEL, h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
-    assign_macro_to_btn "btn_restore_prev_state_" & capgrp, "btn_restore_prev_state_Click"
+    ctr.createCmdButton "btn_delete_record_" & capgrp_btn, "Regel verwijderen", ws:=wb.Sheets(capgrp), _
+    overwrite:=overwrite, length:=main.BTN_HEIGHT, width:=main.BTN_WIDTH
+    
+    ctr.createCmdButton "btn_restore_prev_state_" & capgrp_btn, main.BTN_RESTORE_PREV_STATE_LABEL, ws:=wb.Sheets(capgrp), _
+    overwrite:=overwrite, length:=main.BTN_HEIGHT, width:=main.BTN_WIDTH
     
     ' second column of buttons: Exporteren PDF, Printen planning,
-    ctr.add_button "btn_export_pdf_" & capgrp, main.BTN_EXPORT_PDF_ADDR, ws:=wb.Sheets(capgrp), _
-    overwrite:=overwrite, label:="Exporteren PDF", h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
-    assign_macro_to_btn "btn_export_pdf_" & capgrp, "btn_export_pdf_Click"
+    ctr.createCmdButton "btn_export_pdf_" & capgrp_btn, "Exporteren PDF", ws:=wb.Sheets(capgrp), _
+    overwrite:=overwrite, length:=main.BTN_HEIGHT, width:=main.BTN_WIDTH
     
-    ctr.add_button "btn_print_dates_" & capgrp, main.BTN_PRINT_DATES_ADDR, ws:=wb.Sheets(capgrp), _
-    overwrite:=overwrite, label:="Printen planning", h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
-    assign_macro_to_btn "btn_print_dates_" & capgrp, "btn_print_dates_Click"
+    ctr.createCmdButton "btn_print_dates_" & capgrp_btn, "Printen planning", ws:=wb.Sheets(capgrp), _
+    overwrite:=overwrite, length:=main.BTN_HEIGHT, width:=main.BTN_WIDTH
     
-    'third column of buttons:Actualiseer tijden
-    ctr.add_button "btn_calculate_dates_" & capgrp, main.BTN_CALCULATE_DATES_ADDR, ws:=wb.Sheets(capgrp), _
-    overwrite:=overwrite, label:="Actualiseer tijden", h:=main.BTN_HEIGHT, w:=main.BTN_WIDTH, left_offset:=left_offset
-    assign_macro_to_btn "btn_calculate_dates_" & capgrp, "btn_calculate_dates_Click"
+    ' third column of buttons: Actualiseer tijden
+    ctr.createCmdButton "btn_calculate_dates_" & capgrp_btn, "Actualiseer tijden", ws:=wb.Sheets(capgrp), _
+    overwrite:=overwrite, assign_macro:="btn_calculate_dates_Click", length:=main.BTN_HEIGHT, width:=main.BTN_WIDTH
+    
+    ctr.assignMacroToCmdButton "btn_update_isah_data_" & capgrp_btn, assign_macro:="btn_update_isah_data_Click"
+    ctr.assignMacroToCmdButton "btn_add_record_" & capgrp_btn, assign_macro:="btn_add_record_Click"
+    ctr.assignMacroToCmdButton "btn_delete_record_" & capgrp_btn, assign_macro:="btn_delete_record_Click"
+    ctr.assignMacroToCmdButton "btn_restore_prev_state_" & capgrp_btn, assign_macro:="btn_restore_prev_state_Click"
+    ctr.assignMacroToCmdButton "btn_export_pdf_" & capgrp_btn, assign_macro:="btn_export_pdf_Click"
+    ctr.assignMacroToCmdButton "btn_print_dates_" & capgrp_btn, assign_macro:="btn_print_dates_Click"
+    ctr.assignMacroToCmdButton "btn_calculate_dates_" & capgrp_btn, assign_macro:="btn_calculate_dates_Click"
     
 End Sub
 
 Sub position_buttons(capgrp As String)
     'Declare variables
-    Dim wb As Workbook
+    Dim wb As Workbook, capgrp_btn As String
     Dim left_offset As Long
     
     'Initialize variables
     Set wb = ThisWorkbook
     left_offset = main.BTN_LEFT_OFFSET
+    capgrp_btn = Replace(capgrp, " ", "_")
     
     ' Position the "Overhalen orders" button
-    ctr.positionButton "btn_update_isah_data_" & capgrp, main.BTN_UPDATE_ISAH_ADDRESS, ws:=wb.Sheets(capgrp), left_offset:=left_offset
+    ctr.positionCmdButton "btn_update_isah_data_" & capgrp_btn, address:=main.BTN_UPDATE_ISAH_ADDRESS, ws:=wb.Sheets(capgrp), left_offset:=left_offset
     
-    'Position the "Regel toevoegen" button
-    ctr.positionButton "btn_add_record_" & capgrp, main.BTN_ADD_RECORD_ADDR, ws:=wb.Sheets(capgrp), left_offset:=left_offset
+    ' Position the "Regel toevoegen" button
+    ctr.positionCmdButton "btn_add_record_" & capgrp_btn, address:=main.BTN_ADD_RECORD_ADDR, ws:=wb.Sheets(capgrp), left_offset:=left_offset
     
-    'Position the "Regel verwijderen" button
-    ctr.positionButton "btn_delete_record_" & capgrp, main.BTN_DELETE_RECORD_ADDR, ws:=wb.Sheets(capgrp), left_offset:=left_offset
+    ' Position the "Regel verwijderen" button
+    ctr.positionCmdButton "btn_delete_record_" & capgrp_btn, address:=main.BTN_DELETE_RECORD_ADDR, ws:=wb.Sheets(capgrp), left_offset:=left_offset
     
-    'Position the "Ga Terug" button
-    ctr.positionButton "btn_restore_prev_state_" & capgrp, main.BTN_RESTORE_PREV_STATE_ADDR, ws:=wb.Sheets(capgrp), left_offset:=left_offset
+    ' Position the "Ga Terug" button
+    ctr.positionCmdButton "btn_restore_prev_state_" & capgrp_btn, address:=main.BTN_RESTORE_PREV_STATE_ADDR, ws:=wb.Sheets(capgrp), left_offset:=left_offset
     
-    'Position the "Exporteren PDF" button
-    ctr.positionButton "btn_export_pdf_" & capgrp, main.BTN_EXPORT_PDF_ADDR, ws:=wb.Sheets(capgrp), left_offset:=main.BTN_SECOND_COLUMN_LEFT_OFFSET
+    ' Position the "Exporteren PDF" button
+    ctr.positionCmdButton "btn_export_pdf_" & capgrp_btn, address:=main.BTN_EXPORT_PDF_ADDR, ws:=wb.Sheets(capgrp), left_offset:=main.BTN_SECOND_COLUMN_LEFT_OFFSET
     
-    'Position the "Printen planning" button
-    ctr.positionButton "btn_print_dates_" & capgrp, main.BTN_PRINT_DATES_ADDR, ws:=wb.Sheets(capgrp), left_offset:=main.BTN_SECOND_COLUMN_LEFT_OFFSET
+    ' Position the "Printen planning" button
+    ctr.positionCmdButton "btn_print_dates_" & capgrp_btn, address:=main.BTN_PRINT_DATES_ADDR, ws:=wb.Sheets(capgrp), left_offset:=main.BTN_SECOND_COLUMN_LEFT_OFFSET
     
-    'Position the "Actualiseer tijden" button
-    ctr.positionButton "btn_calculate_dates_" & capgrp, main.BTN_CALCULATE_DATES_ADDR, ws:=wb.Sheets(capgrp), left_offset:=main.BTN_SECOND_COLUMN_LEFT_OFFSET
+    ' Position the "Actualiseer tijden" button
+    ctr.positionCmdButton "btn_calculate_dates_" & capgrp_btn, address:=main.BTN_CALCULATE_DATES_ADDR, ws:=wb.Sheets(capgrp), left_offset:=main.BTN_SECOND_COLUMN_LEFT_OFFSET
+End Sub
+
+Sub test_init_position_buttons()
+    init_buttons "LN 1"
+    position_buttons "LN 1"
 End Sub
 
 Sub init_worksheet_sorting()
@@ -798,18 +847,18 @@ Sub layout_position_control_buttons()
         Set btn = ws.Buttons(btn_names(i))
         
         ' Set button size
-        btn.Width = w
+        btn.width = w
         btn.Height = h
         
         ' Determine button position
         If i < 4 Then
             ' First 4 buttons aligned to cell A1
             btn.left = ws.Range("A1").left + right_distance
-            btn.Top = ws.Range("A1").Top + top_distance + (i * top_interval)
+            btn.top = ws.Range("A1").top + top_distance + (i * top_interval)
         Else
             ' Next 4 buttons aligned to cell D1
             btn.left = ws.Range("D1").left + right_distance
-            btn.Top = ws.Range("D1").Top + top_distance + ((i - 4) * top_interval)
+            btn.top = ws.Range("D1").top + top_distance + ((i - 4) * top_interval)
         End If
 next_i:
     Next i
@@ -819,9 +868,9 @@ Sub test_control_button()
 Dim ws As Worksheet
 Set ws = ThisWorkbook.Sheets(main.CONTROL_SHEET_NAME)
 Set btn = ws.Buttons("btn_import_art")
-Debug.Print btn.Width, btn.Height
+Debug.Print btn.width, btn.Height
 Debug.Print Range("A1").left, Range("D1").left, btn.left
-Debug.Print Range("A2").Top, Range("A7").Top
+Debug.Print Range("A2").top, Range("A7").top
 End Sub
 
 ' 2.Data Retrieval and Processing
@@ -1965,7 +2014,6 @@ Sub update_orders_range(capgrp As String)
        Debug.Print "named range does not exist, create: " & range_name
        main.init_orders_range capgrp, range_name, False
     End If
-    'Exit Sub
     
     ' 2 clear orders range, set the default capgrp inputs and copy selected orders and refit orders range to copied values
     main.clear_orders_range capgrp
@@ -2638,6 +2686,23 @@ Sub init_named_ranges()
    r.expandNamedRange main.NUMBER_PER_PALLET_NAMED_RANGE, ThisWorkbook
 End Sub
 
+' This subroutine processes each cell in the provided range capgrp_column_range.
+' It trims the value of each cell and sets the trimmed value back to the cell.
+Sub handle_input_capgrp(capgrp_column_range As Range)
+    Dim cell As Range
+    Dim trimmedValue As String
+
+    ' Loop through each cell in the range, starting from the second row
+    For Each cell In capgrp_column_range
+        ' Check if the cell value is a string
+        If VarType(cell.value) = vbString Then
+            ' Trim the value and set it back to the cell
+            trimmedValue = Trim(cell.value)
+            cell.value = trimmedValue
+        End If
+    Next cell
+End Sub
+
 Sub isah_export_stage_orders()
     Dim rng0 As Range
     Dim wb0 As Workbook
@@ -2703,8 +2768,6 @@ Sub isah_export_stage_orders()
                   orders_arr(rw_index, UBound(orders_arr, 2)) = orderNrCapgrp
 nx_i:
               Next rw_index
-              'a.printArray orders_arr
-              'Exit Sub
            End If
         Else
            ' add column CAPGRP = `capgrp` to orders_arr
@@ -3847,8 +3910,10 @@ Public Sub print_planning(capgrp As String, Optional print_pdf As Boolean = True
         End If
     Next cl
     
-    ' Add the Extra info section to the print range
-    main.print_add_planning_extra_info
+    ' Copy `capgrp_extra_info` values and formats to print sheet
+    Dim rng_extra_info As Range
+    Set rng_extra_info = r.get_range(capgrp & "_extra_info")
+    r.copy_range rng_extra_info, main.PRINT_EXTRA_INFO_ADDRESS, ws1
     
     ' Style `capgrp_workdays` range
     ws1.Activate
@@ -3931,7 +3996,7 @@ Public Sub print_planning(capgrp As String, Optional print_pdf As Boolean = True
     textFooterFirstLine = Replace(WorktimesMapString, ";", ", ")
     textFooterSecondLineLeft = "FP-2/1 03/24"
     textFooterSecondLineRight = dt.format_datetime(Now())
-    main.SetCustomFooter ws.PageSetup, textFooterFirstLine, textFooterSecondLineLeft, textFooterSecondLineRight
+    r.SetCustomFooter ws.PageSetup, textFooterFirstLine, textFooterSecondLineLeft, textFooterSecondLineRight
     
     ' Insert `print_rng` header at linebreaks
     ' First get the page breaks rows
@@ -4048,8 +4113,6 @@ Sub print_add_planning_extra_info()
         .Merge
     End With
     
-    ' Add borders to ExtraInfo
-    extraInfoRange.Borders.LineStyle = xlContinuous
 End Sub
 
 Sub test_print_pdf()
@@ -4058,26 +4121,6 @@ main.print_planning "LN 1", True, False
 
 End Sub
 
-Sub SetCustomFooter(pgSetup As PageSetup, ctext, ltext, rtext)
-    ' This subroutine sets a custom two-line footer for the active worksheet.
-    ' The first line is centered and contains "text1".
-    ' The second line has "left text" aligned to the left and "right text" aligned to the right.
-    
-    ' Clear any existing footers
-    With pgSetup
-    .LeftFooter = ""
-    .CenterFooter = ""
-    .RightFooter = ""
-    ' Set the first line of the footer, centered
-    .CenterFooter = ctext
-    ' Set the second line of the footer with left and right aligned texts
-    ' The character Chr(10) is used to insert a line break
-    .LeftFooter = ltext & Chr(10)
-    .RightFooter = rtext & Chr(10)
-    
-    End With
-    
-End Sub
 
 Sub hide_columns_for_print(rng0 As Range)
 
@@ -4468,12 +4511,52 @@ Function check_isah_input() As Boolean
 End Function
 
 
-' OPEN WORKBOOK METHODS
+' 9. OPEN WORKBOOK METHODS
 Sub init_articles_per_pallet()
    If main.checkIsahTestQuery() Then
       main.btn_isah_update_aantal_per_pallet_Click False
    End If
 End Sub
+
+' 10. Clean up functions
+Sub remove_capgrp_sheet(capgrp As String)
+    ' This subroutine removes a capgrp sheet and its associated named ranges.
+    ' It first finds and deletes all named ranges that start with the capgrp name,
+    ' and then deletes the capgrp sheet itself.
+    '
+    ' Parameters:
+    ' capgrp - The name of the capacity group (capgrp) sheet to be removed.
+    
+    Dim wb As Workbook
+    Dim namesToDelete As collection
+    Dim nameObj As name
+    Dim ws As Worksheet
+    
+    ' Set the workbook
+    Set wb = ThisWorkbook
+    
+    ' Check if the sheet exists before attempting to delete
+    If w.sheet_exists(capgrp, wb) Then
+        ' Delete the capgrp sheet
+        Application.DisplayAlerts = False
+        wb.Sheets(capgrp).Delete
+        Application.DisplayAlerts = True
+    End If
+    
+    ' Find all named ranges that start with the capgrp name
+    Set namesToDelete = u.filterObjectsOnProperty(wb.Names, "Name", prop_pattern:=capgrp & ".*")
+    
+    ' Delete each named range
+    r.deleteNames namesToDelete, wb:=wb
+    
+End Sub
+
+Sub remove_all_capgrps()
+    For Each capgrp_ In main.get_capgrp_sheet_names()
+    main.remove_capgrp_sheet CStr(capgrp_)
+    Next
+End Sub
+
 
 
 

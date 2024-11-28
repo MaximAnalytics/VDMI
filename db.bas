@@ -982,3 +982,7 @@ Function toSqlList(values As Variant, Optional force_string As Boolean = False) 
     ' Raise an error if the input is not a 1D array, collection, or range
     Err.Raise 1002, "toSqlList", "Input must be a 1D array, collection, or range"
 End Function
+
+
+
+
