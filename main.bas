@@ -26,10 +26,10 @@ Global Const INPUT_DATA_HEADER As String = "Artikel,Ordernummer,Productieorder,O
 Global Const INPUT_DATA_FORMATS As String = "General,General,General,General,General,0,0,0.00,General,General,General,General,General,General,General,General,General,General"
 Global Const ISAH_TEMPLATE_COLUMN_FORMATS As String = "Artikel=General;Ordernummer=General;Productieorder=General;Omschrijving=General;Bulkcode=General;Aantal=0;Qty1=0;Duur=0.00;Resources=General;Flesformaat=General;Sluiting=General;Pallettype=General;ProdWk=General;Land=General;Oproep=General"
 Global Const OUTPUT_DATA_FORMATS As String = "General,General,General,General,General,0,0,0.00,General,General,General,General,General,General,General,ddd hh:mm,ddd hh:mm"
-Global Const ORDERS_RANGE_COLUMN_FORMATS As String = "Starttijd=ddd hh:mm;Eindtijd=ddd hh:mm"
+Global Const ORDERS_RANGE_COLUMN_FORMATS As String = "Aantal=0;Qty1=0;Duur=0.00;Starttijd=ddd hh:mm;Eindtijd=ddd hh:mm"
 Global Const INPUT_ISAH_SHEET = "Template"
 Global Const PRODWK_COLUMN As String = "ProdWk"
-Global Const capgrp_column As String = "Cap.Grp"
+Global Const CAPGRP_COLUMN_NAME As String = "Cap.Grp"
 Global Const BULKCODE_COLUMN As String = "Bulkcode"
 Global Const STARTDATE_COLUMN As String = "Starttijd"
 Global Const DESCRIPTION_COLUMN As String = "Omschrijving"
@@ -102,8 +102,6 @@ Global Const BASE_SHEET_NAME As String = "base"
 Global Const START_SHEET_NAME As String = "instructie"
 
 ' DEFAULTS
-Global Const DEFAULT_YEAR = 2023
-Global Const DEFAULT_WEEKNUMBER = 20
 Global Const DEFAULT_PRINT_FILE_PATH = ""
 
 ' BULK ORDERS SHEET
@@ -340,11 +338,15 @@ Sub init_capgrp_sheets(Optional capgrp_sheet_filter As String, Optional capgrp_s
 
   ' get the unique article capgrps, bulk capgrps (starting with U) are handled in different sheet
   Dim capgrp_sheets As collection, rng0 As Range, rng1 As Range, rng2 As Range, ws0 As Worksheet, ws1 As Worksheet
-  Dim capgrp As String, range_name As String, orders_rng As Range, prev_wsname As String
+  Dim capgrp As String, range_name As String, orders_rng As Range, prev_wsname As String, curEnableEvents As Boolean, curScreenUpdating As Boolean
   
   ' parameters
   Dim b_init_buttons As Boolean: b_init_buttons = True
   prev_wsname = "BULK" 'previous worksheet name, used to maintain sorting of worksheets
+  
+  ' store current EnableEvents, ScreenUpdating
+  curEnableEvents = Application.EnableEvents
+  curScreenUpdating = Application.ScreenUpdating
   Application.EnableEvents = False ' to prevent events from worksheet pasting
   Application.ScreenUpdating = False
   
@@ -410,21 +412,20 @@ nextiteration:
 GoTo clean_up
 handle_error:
     On Error GoTo 0
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
+    Application.EnableEvents = curEnableEvents
+    Application.ScreenUpdating = curScreenUpdating
     Err.Raise Err.Number 'rethrow error for user
     
 clean_up:
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
+    Application.EnableEvents = curEnableEvents
+    Application.ScreenUpdating = curScreenUpdating
 End Sub
 
 Sub init_capgrp_worksheet_code()
-  Dim capgrp As String
   Set capgrp_sheet_names = main.get_capgrp_sheet_names()
-  For Each c In capgrp_sheet_names
-     capgrp = c
-     vb.CopyWorksheetCode main.BASE_SHEET_NAME, capgrp
+  For Each capgrp_ In capgrp_sheet_names
+     fs.copyProcedureCode "Worksheet_Activate", main.BASE_SHEET_NAME, CStr(capgrp_)
+     fs.copyProcedureCode "Worksheet_Change", main.BASE_SHEET_NAME, CStr(capgrp_)
   Next
 End Sub
 
@@ -522,7 +523,7 @@ Sub init_orders_range(capgrp As String, range_name As String, overwrite As Boole
     If overwrite Or Not r.name_exist(range_name) Then
       ' get the length of the input data header (r1), expand downwards to last row
       input_data_columns = str.str_to_array(main.INPUT_DATA_HEADER)
-      c1 = a.num_array_columns(input_data_columns)
+      c1 = a.numArrayColumns(input_data_columns)
       Set rng0 = r.expand_range(main.ORDERS_RANGE_ADDR, ws:=ThisWorkbook.Worksheets(capgrp), c1:=c1, dbg:=main.P_DEBUG)
       r.delete_named_range range_name, clear:=True
       r.create_named_range range_name, capgrp, rng0.address, overwrite:=overwrite, expand_range:=False
@@ -587,6 +588,14 @@ Sub init_workdaytimes_range(capgrp As String, range_name As String)
     format_workdaytimes_range range_name
 End Sub
 
+' restore days column, times row in worktimes range
+Sub init_workdaytimes_days_times(capgrp As String)
+    Dim rng As Range
+    Set rng = get_worktimes_range(capgrp)
+    rng.Rows(1).value = r.str_to_array(main.WORKDAYS_RANGE_HEADER)
+    rng.columns(1).value = WorksheetFunction.Transpose(r.str_to_array(main.WORKDAYS_RANGE_IDS))
+End Sub
+
 Sub init_weeknumber_range(capgrp As String)
     ' initialize weeknumber input
     range_name = capgrp & "_input_weeknumber"
@@ -610,6 +619,14 @@ End Function
 
 Function get_weeknumber(capgrp As String) As Integer
     get_weeknumber = CInt(main.get_weeknumber_range(capgrp).Cells(2, 2).value)
+End Function
+
+Function get_yearnumber_range(capgrp As String) As Range
+    Set get_yearnumber_range = r.get_range(capgrp & "_input_year")
+End Function
+
+Function get_yearnumber_range_name(capgrp As String) As String
+    get_yearnumber_range_name = capgrp & "_input_year"
 End Function
 
 Sub init_print_file_range(capgrp As String)
@@ -641,11 +658,12 @@ Sub init_extra_info(capgrp As String)
     ' Simple extra info range
     extraInfoRange.Merge
     
-    ' Add borders to ExtraInfo
+    ' Add borders to ExtraInfo + WrapText
     With extraInfoRange
         .Borders.LineStyle = xlContinuous
         .HorizontalAlignment = xlGeneral
         .VerticalAlignment = xlTop
+        .WrapText = True
     End With
     
 End Sub
@@ -903,7 +921,7 @@ End Sub
 Function get_isah_capgrp() As Variant
     Dim rng0 As Range, rng1 As Range
     Set rng0 = r.get_range(ThisWorkbook.Sheets(main.INPUT_ISAH_SHEET))
-    Set rng1 = r.get_column_values(rng0, main.capgrp_column)
+    Set rng1 = r.get_column_values(rng0, main.CAPGRP_COLUMN_NAME)
     get_isah_capgrp = r.get_unique_vals(rng1)
 End Function
 
@@ -1115,7 +1133,7 @@ Sub copy_selected_orders(capgrp As String, Optional clear_ws As Boolean = False,
       Debug.Print "filtering ISAH orders on capgrps:"
       a.printArray isah_capgrp_array
    End If
-   filtered_array = r.filter_range(rng0, main.capgrp_column, isah_capgrp_array, main.PRODWK_COLUMN, prodWk, remove_filter:=remove_filter, xl_operator:=xlFilterValues)
+   filtered_array = r.filter_range(rng0, main.CAPGRP_COLUMN_NAME, isah_capgrp_array, main.PRODWK_COLUMN, prodWk, remove_filter:=remove_filter, xl_operator:=xlFilterValues)
    input_data_columns = str.str_to_array(main.INPUT_DATA_HEADER)
    selected_array = a.select_array_columns(filtered_array, input_data_columns)
    
@@ -1152,7 +1170,7 @@ Sub update_bulk_capgrp_orders()
    Application.EnableEvents = False
 
    ' 1 prepare the BULK sheet
-   Dim range_values As Range, range_name As String, capgrp_column_name As String, num_rows As Long
+   Dim range_values As Range, range_name As String, CAPGRP_COLUMN_NAME As String, num_rows As Long
    Set BulkSheet = ThisWorkbook.Sheets(main.BULK_SHEET_NAME)
    w.clearWorksheet BulkSheet.name, ThisWorkbook
    BulkSheet.Activate
@@ -1183,7 +1201,7 @@ Sub update_bulk_capgrp_orders()
    End If
    
    ' 3 get arrays insert later into BULK sheet from ISAH Template sheet => TODO: get_column(array,index,offset_row)
-   filtered_array = r.filter_range(rng0, main.capgrp_column, bulk_capgrp_array, remove_filter:=True, xl_operator:=xlFilterValues)
+   filtered_array = r.filter_range(rng0, main.CAPGRP_COLUMN_NAME, bulk_capgrp_array, remove_filter:=True, xl_operator:=xlFilterValues)
    input_data_columns = str.str_to_array(main.BULK_ORDERS_HEADER)
    selected_array = filtered_array
    selected_values_array = a.subset_rows(selected_array, LBound(selected_array) + 1)
@@ -1233,12 +1251,12 @@ Sub update_bulk_capgrp_orders()
        If Not w.sheet_exists(c, ThisWorkbook) Then
            GoTo next_c
        End If
-       capgrp_column_name = Replace(capgrp_sheet, "LN", "Lijn")
-       r.add_named_range_column range_name, capgrp_column_name
+       CAPGRP_COLUMN_NAME = Replace(capgrp_sheet, "LN", "Lijn")
+       r.add_named_range_column range_name, CAPGRP_COLUMN_NAME
         
        ' fill capgrp_column with VLOOKUP
        formulaDef = str.subInStr(formulaTemplate, start_address, capgrp_sheet, main.CAPGRP_BULKCODE_STARTDATE_RANGE, main.STARTDATE_COLUMN_INDEX)
-       Set formula_range = r.get_column(range_name, capgrp_column_name)
+       Set formula_range = r.get_column(range_name, CAPGRP_COLUMN_NAME)
        Set formula_range = r.subset_range(formula_range, startrow:=1)
        r.fill_formula_range formula_range, formulaDef, True
         
@@ -1360,9 +1378,9 @@ Function get_capgrp_columns_bulk_sheet() As Range
    endcolindex = 0
    For Each c In capgrp_sheets
        capgrp_sheet = c
-       capgrp_column_name = Replace(CStr(capgrp_sheet), "LN", "Lijn")
-       If r.column_exist(rng0, capgrp_column_name) Then
-          col_index = r.get_column_index(rng0, capgrp_column_name)
+       CAPGRP_COLUMN_NAME = Replace(CStr(capgrp_sheet), "LN", "Lijn")
+       If r.column_exist(rng0, CAPGRP_COLUMN_NAME) Then
+          col_index = r.get_column_index(rng0, CAPGRP_COLUMN_NAME)
           startcolindex = WorksheetFunction.Min(startcolindex, col_index)
           endcolindex = WorksheetFunction.MAX(endcolindex, col_index)
        End If
@@ -1486,37 +1504,35 @@ End Sub
 
 ' input workdaytimes from sheet, returns array of (n_worktimes * n_workday, 3) with columns (starttime, endtime, ind_active)
 Function get_workdaytimes_array(capgrp As String, startDate As Date)
-
-Dim date0 As Date
-
-Dim range_name As String
-range_name = capgrp & "_workdays"
-
-Set workdaytimes_range = r.get_range(range_name)
-Set workdays = r.get_column(range_name, 1, offset_row:=1)
-Set worktimes = r.get_row(range_name, 1, offset_column:=1)
-
-' container
-ReDim work_startend_times(1 To workdays.Cells.count * worktimes.Cells.count, 1 To 3)
-
-c = 1
-For Each wd In workdays.Cells
-    ' get the workday
-    date0 = dt.vdmi_get_day_of_week(startDate, CStr(wd))
-    For Each wt In worktimes.Cells
-    wt0 = Split(wt, "-")(0)
-    wt1 = Split(wt, "-")(1)
-    dt0 = dt.get_datetime_value(date0, wt0)
-    dt1 = dt.get_datetime_value(date0, wt1)
-    'Debug.Print dt0, dt1
-    work_startend_times(c, 1) = dt0
-    work_startend_times(c, 2) = dt1
-    work_startend_times(c, 3) = r.get_value(workdaytimes_range, wd, wt)
-    c = c + 1
-    Next wt
-Next wd
-
-get_workdaytimes_array = work_startend_times
+    Dim date0 As Date
+    Dim range_name As String
+    range_name = capgrp & "_workdays"
+    
+    Set workdaytimes_range = r.get_range(range_name)
+    Set workdays = r.get_column(range_name, 1, offset_row:=1)
+    Set worktimes = r.get_row(range_name, 1, offset_column:=1)
+    
+    ' container
+    ReDim work_startend_times(1 To workdays.Cells.count * worktimes.Cells.count, 1 To 3)
+    
+    c = 1
+    For Each wd In workdays.Cells
+        ' get the workday
+        date0 = dt.vdmi_get_day_of_week(startDate, CStr(wd))
+        For Each wt In worktimes.Cells
+        wt0 = Split(wt, "-")(0)
+        wt1 = Split(wt, "-")(1)
+        dt0 = dt.get_datetime_value(date0, wt0)
+        dt1 = dt.get_datetime_value(date0, wt1)
+        'Debug.Print dt0, dt1
+        work_startend_times(c, 1) = dt0
+        work_startend_times(c, 2) = dt1
+        work_startend_times(c, 3) = r.get_value(workdaytimes_range, wd, wt)
+        c = c + 1
+        Next wt
+    Next wd
+    
+    get_workdaytimes_array = work_startend_times
 End Function
 
 ' returns the first day of inputted year-week
@@ -1625,20 +1641,22 @@ End Sub
 ' This subroutine sets default values for capgrp sheet inputs weeknumber and year
 Sub set_default_weeknumber_year(capgrp_sheet As String)
 
- Dim current_prodwk As Integer, current_year As Integer, new_prodwk As Integer
+ Dim current_prodwk As Integer, current_year As Integer, new_prodwk As Integer, prodwk_year As Integer
  ' Get first new_prodwk from ISAH INPUT
  new_prodwk = WorksheetFunction.Min(r.get_column(main.get_isah_input_range, main.PRODWK_COLUMN, offset_row:=1))
 
  ' set ProdWk and Year if not set
  current_prodwk = main.get_capgrp_weeknumber(capgrp_sheet)
  current_year = main.get_capgrp_year(capgrp_sheet)
- If current_year = 0 Then
-    Call main.set_capgrp_year(capgrp_sheet, CInt(year(Now())))
- End If
  If current_prodwk = 0 Then
     Call main.set_capgrp_weeknumber(capgrp_sheet, new_prodwk)
  End If
-
+ 
+ If current_year = 0 Then
+    prodwk_year = dt.determine_year_based_on_weeknum(current_prodwk)
+    Call main.set_capgrp_year(capgrp_sheet, prodwk_year)
+ End If
+ 
 End Sub
 
 ' 20230714: make the week overflow row bold
@@ -1663,7 +1681,7 @@ Sub update_start_end_times(capgrp As String, Optional dbg As Boolean = False)
     Set ws = ThisWorkbook.Sheets(capgrp)
     range_name = capgrp & "_orders"
     startdate_column_address = r.get_column(range_name, main.STARTDATE_COLUMN, ws:=ws, offset_row:=1).Cells(1, 1).address
-    a.paste_array start_end_times, startdate_column_address, ws
+    a.pasteArray start_end_times, startdate_column_address, ws
     
     ' fit columns
     r.autofit_columns_rows r.get_column(range_name, main.STARTDATE_COLUMN, ws:=ws)
@@ -1672,7 +1690,9 @@ Sub update_start_end_times(capgrp As String, Optional dbg As Boolean = False)
     ' determine the overflow row index in orders_rng and set to BOLD font
     Dim orders_rng As Range, orders_values_rng
     Set orders_rng = get_orders_range(capgrp)
-    enddates = r.get_column_values(orders_rng, main.ENDDATE_COLUMN)
+    ' TODO rmltr
+    'enddates = r.get_column_values(orders_rng, main.ENDDATE_COLUMN)
+    enddates = a.getArrayColumnValues(orders_rng.value, main.ENDDATE_COLUMN)
     
     ' if enddates not array, then exit
     If IsArray(EndDate) Then
@@ -1761,8 +1781,8 @@ Function calculate_start_end_times(capgrp As String, startDate As Date, Optional
     art_index = r.get_column_index(ord_range, main.ART_COLUMN)
     
     ' get the duration, articles array and create empty array for the calculated startdates `startdates_out`
-    duration_arr = a.get_array_column(ord, dur_index)
-    articles_arr = a.get_array_column(ord, art_index)
+    duration_arr = a.getArrayColumn(ord, dur_index)
+    articles_arr = a.getArrayColumn(ord, art_index)
     startdates_out = a.create_array(a.numArrayRows(ord), 1)
     
     'get the first starttime from the workdaytimes array (wdt)
@@ -1947,8 +1967,8 @@ Sub clear_orders_range(Optional capgrp As String = "")
        Set ordersRng = main.get_orders_range(capgrp)
        Set rangeToClear = r.getResizedRange(ordersRng.Cells(1, 1), add_rows:=998, add_cols:=main.XL_MAX_NUMBER_COLUMNS - 1)
        r.clear_range rangeToClear, clear_formatting:=True
-       ' reduce orders_range to single cell
-       r.subsetNamedRange range_name, 1, 1, 1, 1
+       ' reduce orders_range to single row
+       r.subsetNamedRange range_name, 1, 1, 1, 1 ' ordersRng.columns.count, ThisWorkbook
     End If
 End Sub
 
@@ -1984,6 +2004,9 @@ nx_capgrp:
     
     ' clear EXPORT_ISAH
     r.clear_range_values main.ISAH_STAGING_RANGE_NAME, clear_formatting:=True
+    
+    ' clear NIEUW
+    w.clearWorksheet main.ISAH_NEW_ORDERS_SHEET_NAME
 End Sub
 
 ' TODO: replace capgrp with capgrp_sheet
@@ -2792,16 +2815,16 @@ next_capgrp_sheet:
     End If
     
     ' in result array `orders_arr_all`, filter out all rows where ProdHeaderOrdNr does not match pattern ^\\d (starts with digit)
-    OrdersHeaderArray = a.get_array_row(orders_arr_all, 1)
+    OrdersHeaderArray = a.getArrayRow(orders_arr_all, 1)
     column_index = CInt(a.getArrayColumnIndex(orders_arr_all, "ProdHeaderOrdNr"))
     OrdersNoHeader = a.subset_rows(orders_arr_all, 2)
     OrdersWithOrdNrArray = a.FilterArrayOnPattern(OrdersNoHeader, "^\d", column_index)
     OrdersWithOrdNrArray = a.concatArrays(OrdersHeaderArray, OrdersWithOrdNrArray)
     
     ' paste array `orders_arr_all` and create named range `main.ISAH_STAGING_RANGE_NAME`
-    a.paste_array OrdersWithOrdNrArray, "A1", ws0
+    a.pasteArray OrdersWithOrdNrArray, "A1", ws0
     r1 = a.numArrayRows(OrdersWithOrdNrArray)
-    c1 = a.num_array_columns(OrdersWithOrdNrArray)
+    c1 = a.numArrayColumns(OrdersWithOrdNrArray)
     Set rng0 = ws0.Range(r.get_range_address(ws0, 1, r1, 1, c1))
     r.create_named_range main.ISAH_STAGING_RANGE_NAME, ws0.name, "A1", clear:=False
     r.expandNamedRange main.ISAH_STAGING_RANGE_NAME, ThisWorkbook, dbg:=True
@@ -2836,7 +2859,8 @@ Sub isah_export_match_prodheader()
     dossiercode_column = main.ISAH_DATABASE_DOSSIERCODE_COLUMN
     
     Dim ordersRange As Range: Set ordersRange = r.get_range(main.ISAH_STAGING_RANGE_NAME, wb:=wb0)
-    orders_to_query = r.get_column_values(ordersRange, main.ISAH_STAGING_ORDERNR_INDEX, wb:=wb0)
+    'orders_to_query = r.get_column_values(ordersRange, main.ISAH_STAGING_ORDERNR_INDEX, wb:=wb0)
+    orders_to_query = a.getArrayColumnValues(ordersRange.value, main.ISAH_STAGING_ORDERNR_INDEX)
     
     ' T_ProductionHeader query
     Dim sql0 As String, table_name As String, sql_template As String
@@ -3047,8 +3071,11 @@ Sub isah_export_match_prodboo()
     
     ' get the ProdHeaderDossierCode
     Dim ordersRange As Range: Set ordersRange = r.get_range(main.ISAH_STAGING_RANGE_NAME, wb:=wb0)
-    dossiercode_to_query = r.get_column_values(ordersRange, dossiercode_column, wb:=wb0)
-    capgrp_to_query = r.get_column_values(ordersRange, main.ISAH_STAGING_CAGGRP_COLUMN, wb:=wb0)
+    'dossiercode_to_query = r.get_column_values(ordersRange, dossiercode_column, wb:=wb0)
+    'capgrp_to_query = r.get_column_values(ordersRange, main.ISAH_STAGING_CAGGRP_COLUMN, wb:=wb0)
+    
+    dossiercode_to_query = a.getArrayColumnValues(ordersRange.value, dossiercode_column)
+    capgrp_to_query = a.getArrayColumnValues(ordersRange.value, main.ISAH_STAGING_CAGGRP_COLUMN)
     
     ' build match query for T_ProdBillOfOper  using CAPGRP and DossierCode as key,
     ' return ISAH columns ProdHeaderDossierCode, MachGrpCode, StartDate, EndDate
@@ -3176,7 +3203,7 @@ Sub isah_export_update_prodheader()
     End If
     
     ' Create query statement `sql1` to select columns from `rs0` where `match_prod_header`=1
-    orderNumbers = a.resize_array(a.get_array_column(match_orders_array, 1), r0:=2)
+    orderNumbers = a.resize_array(a.getArrayColumn(match_orders_array, 1), r0:=2)
     wherecondition = db.sqlWhereInCondition(orderNumbers, main.ISAH_DATABASE_ORDERNR_COLUMN, mssql)
     sql1 = str.subInStr("SELECT @1 FROM @2 @3;", select_check_columns_list, table_name_isah, wherecondition)
     If main.P_DEBUG Then
@@ -3316,8 +3343,8 @@ Sub isah_export_update_prodboo()
     "MIN(ProdBOOStatusCode) OVER (PARTITION BY ProdHeaderDossierCode) AS ProdBOOStatusCode"
     
     ' Key matching values for update statement
-    dossierCodes = a.resize_array(a.get_array_column(match_dossiercode_capgrp_array, 1), r0:=2)
-    machgrpCodes = a.resize_array(a.get_array_column(match_dossiercode_capgrp_array, 2), r0:=2)
+    dossierCodes = a.resize_array(a.getArrayColumn(match_dossiercode_capgrp_array, 1), r0:=2)
+    machgrpCodes = a.resize_array(a.getArrayColumn(match_dossiercode_capgrp_array, 2), r0:=2)
     
     Dim where_values_col As New collection, wherepart As String
     Dim dossiercode_value As String, machgrpcode_value As String
@@ -3713,6 +3740,8 @@ Public Sub btn_update_isah_data_Click()
     ' EXCEPTIONS: ISAH input sheet is empty
     If Not main.check_isah_input() Then
        capgrpSheet.Activate
+       Application.ScreenUpdating = True
+       Application.EnableEvents = True
        Exit Sub
     End If
     
@@ -4032,7 +4061,7 @@ nx_break:
     ' Start printing dialog
     If print_pdf = False Then
       'Open the Print dialogue box
-      Application.Dialogs(xlDialogPrint).Show
+      Application.Dialogs(xlDialogPrint).Show 'arg11:=True
     Else
       'Suppress the save dialog box
       Application.DisplayAlerts = False
@@ -4178,8 +4207,14 @@ Sub btn_import_art_Click()
   Application.ScreenUpdating = False
   Application.EnableEvents = False
   
+  ' 20241218: Import articles sheet as its deactivated in Workbook_Open
+  main.isah_import_articles
+  
   ' Format isah input range columns to expected data types
   main.format_isah_input_range
+  
+  ' Add new capgrp tabs before importing orders
+  main.add_capgrp_sheets
   
 On Error GoTo control_sheet
   ' loop over capgrps as update orders
@@ -4187,9 +4222,6 @@ On Error GoTo control_sheet
      capgrp_sheet = CStr(c)
      Debug.Print "updating sheet " & capgrp_sheet
      main.update_orders_range capgrp_sheet
-     If c = "LN 2" Then
-     Exit Sub
-     End If
   Next
 GoTo clean_up
  
@@ -4244,21 +4276,14 @@ Public Sub btn_add_capgrp_sheets_Click()
   Application.ScreenUpdating = False
   Application.EnableEvents = False
   
-  Dim capgrp_sheets As collection, capgrp_sheet As String
-  
-On Error GoTo control_sheet
-  Set capgrp_sheets = main.get_template_capgrp_names() ' get Template capgrp codes
-  For Each c In capgrp_sheets
-     capgrp_sheet = c
-     If Not w.sheet_exists(capgrp_sheet) Then
-        'initialize NEW capgrp sheet
-        main.init_capgrp_sheets capgrp_sheet
-     End If
-  Next
-  
-' sort sheets to make sure new capgrp is in right location
-main.init_worksheet_sorting
-GoTo clean_up
+  On Error GoTo control_sheet
+
+  ' add capgrp sheets
+  main.add_capgrp_sheets
+
+  ' sort sheets to make sure new capgrp is in right location
+  main.init_worksheet_sorting
+  GoTo clean_up
   
 control_sheet:
   ctrl_sheet.Activate
@@ -4270,6 +4295,19 @@ clean_up:
   ctrl_sheet.Activate
   Application.ScreenUpdating = True
   Application.EnableEvents = True
+End Sub
+
+Sub add_capgrp_sheets()
+  Dim capgrp_sheets As collection, capgrp_sheet As String
+  Set capgrp_sheets = main.get_template_capgrp_names() ' get Template capgrp codes
+  For Each c In capgrp_sheets
+     capgrp_sheet = c
+     If Not w.sheet_exists(capgrp_sheet) Then
+        'initialize NEW capgrp sheet
+        main.init_capgrp_sheets capgrp_sheet
+        
+     End If
+  Next
 End Sub
 
 Public Sub btn_isah_database_export_Click()
@@ -4409,11 +4447,11 @@ nx:
         Dim orders_rng As Range
         Set orders_rng = main.get_orders_range(capgrp)
         
-        orders_rng.Select
-        
-        
         ' Check if the article already exists in the orders range
-        productie_orders = r.get_column_values(orders_rng, "Productieorder")
+        ' TODO rmltr
+        ' productie_orders = r.get_column_values(orders_rng, "Productieorder")
+        productie_orders = a.getArrayColumnValues(orders_rng.value, "Productieorder")
+        
         If u.InList(CLng(prodOrder), productie_orders) Then
             errmsg = "Sheet `" & capgrp & "` productieorder `" & prodOrder & "` already inserted."
             MsgBox errmsg
@@ -4509,7 +4547,6 @@ Function check_isah_input() As Boolean
        check_isah_input = True
     End If
 End Function
-
 
 ' 9. OPEN WORKBOOK METHODS
 Sub init_articles_per_pallet()

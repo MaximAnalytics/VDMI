@@ -63,6 +63,7 @@ Sub test_collection_functions()
     
     
     ' 2. Transformations
+    Dim col_from_2d As collection
     Set col = a.as_collection(Array("C", "B", "A", 1, 2, 3))
     Set col1 = clls.sort_collection(col, True)
     Debug.Assert clls.collectionToString(col1) = "1,2,3,A,B,C"

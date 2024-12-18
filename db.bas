@@ -60,7 +60,7 @@ Dim filePath As String, conn0 As ADODB.Connection, DataSourceString As String, C
     Set rs0 = db.queryDB(conn0, sql0)
     Debug.Assert RecordSetNumberRecords(rs0) = 317
     recordsArr = db.RecordSetToArray(rs0)
-    Debug.Assert a.num_array_columns(recordsArr) = 1 And a.numArrayRows(recordsArr) = 318 ' 317 plus header row
+    Debug.Assert a.numArrayColumns(recordsArr) = 1 And a.numArrayRows(recordsArr) = 318 ' 317 plus header row
     
     ' query empty recordset
     sql0 = "SELECT DISTINCT BasicMat FROM [T_Part_BasicMat$] WHERE BasicMat<'0'"

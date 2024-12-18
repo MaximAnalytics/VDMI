@@ -48,6 +48,9 @@ Sub test_utilities()
     Debug.Assert InList("A", clls.toCollection("A", "B")) = True
     Debug.Assert InList("A", clls.toCollection("AA", "B")) = False
     
+    ' Test for IsArray
+    Debug.Assert u.is_array(Array(), False) And u.is_array("", False) = False
+    
     ' Test Object attribute functions
     Dim ws0 As Worksheet, rng0 As Range
     Set ws0 = w.get_or_create_worksheet("test_ranges", ThisWorkbook)
@@ -238,6 +241,34 @@ Function InList(value As Variant, list As Variant, Optional sep As String = ";")
     
     ' Check if the value is in the array
     InList = a.ItemInArray(value, arr)
+End Function
+
+Function is_array(arr As Variant, Optional raise_error As Boolean = True, Optional source As String = "") As Boolean
+    ' This function checks if the provided variable is an array.
+    ' If raise_error is True and the variable is not an array, it raises an error with the specified source.
+    '
+    ' Parameters:
+    ' arr         : The variable to check.
+    ' raise_error : Optional. If True, raises an error if arr is not an array. Default is True.
+    ' source      : Optional. The source of the error message if raise_error is True.
+    '
+    ' Returns:
+    ' True if arr is an array, False otherwise.
+    
+    ' definition: Empty can be any type
+    If IsEmpty(arr) Then
+       is_array = True
+       Exit Function
+    End If
+    
+    If VBA.Information.IsArray(arr) Then
+        is_array = True
+    Else
+        is_array = False
+        If raise_error Then
+            Err.Raise 1001, source, source & ": input is not an array"
+        End If
+    End If
 End Function
 
 'Formulas

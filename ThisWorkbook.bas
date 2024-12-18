@@ -18,9 +18,9 @@ Private Sub Workbook_Open()
        ThisWorkbook.Sheets(main.START_SHEET_NAME).Activate
     On Error GoTo 0
     
-    ' Initialize articles per pallet sheet
+    ' Initialize articles per pallet sheet deactivate bcs 32-bit problem
     On Error Resume Next
-       main.init_articles_per_pallet
+       ' main.init_articles_per_pallet
     On Error GoTo 0
     
     ' Enable events

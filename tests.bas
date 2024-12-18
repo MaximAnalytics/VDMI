@@ -13,26 +13,29 @@ Dim wb As Workbook, capgrp_sheet As String, ws As Worksheet, ordersRng As Range,
 Dim IsahSheet As Worksheet, BulkSheet As Worksheet
 
 Const P_RELEASE As Boolean = True
+Const TEST_INIT_CAPGRP_SHEETS = False
+
 
 Sub test_all()
 
 GoTo start_test
 start_test:
-
     ' 0. Initialize:
     ThisWorkbook.Activate
     tests.set_database tests.testdatabase
-    tests.set_init_capgrp_sheets
+    If TEST_INIT_CAPGRP_SHEETS Then
+       tests.set_init_capgrp_sheets
+    End If
     tests.test_btn_clear_sheet
 
     ' 1. IMPORT DATE (overhalen orders): INPUT PRODWK29 LN1
     tests.set_input_isah_to_wk29_ln1
+
     tests.test_btn_import_art_ln1
-    
+
     ' 2. CONTROLS: PRODWK29
     tests.set_input_isah_to_wk29
     tests.test_add_capgrp ' remove and re-add LN18
-    
     tests.test_btn_import_art_all
     tests.test_btn_import_bulk
     tests.test_bulk_sheet_values
@@ -60,10 +63,11 @@ start_test:
     tests.test_isah_wk29_import_export
     
     If P_RELEASE Then
+       Debug.Assert Application.EnableEvents = True
        tests.set_for_release
     End If
     
-Exit Sub
+
 
 End Sub
 
@@ -233,7 +237,7 @@ Sub test_btn_import_art_ln1()
     ' set LN 1 year and weeknumber to 29
     main.set_capgrp_weeknumber "LN 1", 29
     main.set_capgrp_year "LN 1", 2023
-    
+
     ' test if for all capgrp sheets, year is set to 29
     For Each capgrp In capgrp_sheets
        Debug.Assert main.get_capgrp_weeknumber(CStr(capgrp)) = 29
@@ -270,37 +274,56 @@ End Sub
 Sub test_btn_import_art_all()
     Set wb = ThisWorkbook
     Dim capgrp_sheets As collection: Set capgrp_sheets = main.get_capgrp_sheet_names()
-    Dim ordersRngRowsCount As Long
+    Dim ordersRngRowsCount As Long, capgrp As String
     
     ' set LN 1 year and weeknumber to 29
     main.set_capgrp_weeknumber "LN 1", 29
     main.set_capgrp_year "LN 1", 2023
     
     ' test if for all capgrp sheets, year is set to 29
-    For Each capgrp In capgrp_sheets
+    For Each capgrp_ In capgrp_sheets
+       capgrp = capgrp_
        Debug.Assert main.get_capgrp_weeknumber(CStr(capgrp)) = 29
     Next
+    
+    ' remove LN 2 to test if LN 2 is re-added
+    main.remove_capgrp_sheet "LN 2"
    
     ' import articles for all capgrps
     main.btn_import_art_Click
-
-    ' test if capgrp sheet of capgrp with data has rows
-    For Each capgrp In capgrp_sheets
-       If capgrp > "LN 1" Then
-          GoTo next_capgrp
-       End If
-       
-       Set ws = wb.Sheets(capgrp)
-       'TODO figure out why this one fails
-       Debug.Assert r.get_last_row("A14", ws) > tests.CAPGRP_START_ROW
-       Set ordersRng = main.get_orders_range(CStr(capgrp))
-       ordersRngRowsCount = ordersRng.Rows.count
-       Debug.Assert ordersRngRowsCount > 1
-next_capgrp:
+    
+    ' Check if each capgrp is added as a tab
+    For Each capgrp_ In capgrp_sheets
+        capgrp = capgrp_
+        Debug.Assert w.sheet_exists(capgrp)
     Next
     
+    ' Check if the number of records of capgrp in Template sheet equals number of orders on capgrp sheet
+    Dim templateRng As Range, capgrpRng As Range
+    Dim templateCount As Double, capgrpCount As Double
+    Set templateRng = main.get_isah_input_range()
+    For Each capgrp_ In capgrp_sheets
+        capgrp = capgrp_
+        Debug.Print str.subInStr("Test row count tab: `@1`", capgrp)
+        Set capgrpRng = main.get_orders_range(capgrp)
+        capgrp_column_index = r.getColumnIndex(templateRng, main.CAPGRP_COLUMN_NAME)
+        templateCount = Application.WorksheetFunction.CountIf(templateRng.columns(capgrp_column_index), capgrp)
+        capgrpCount = capgrpRng.Rows.count - 1 ' Exclude header row
+        Debug.Print templateCount, capgrpCount
+        If Not templateCount = capgrpCount Then
+           MsgBox str.subInStr("test_btn_import_art_all: error mismatch: @1, @2 ", templateCount, capgrpCount)
+           Exit Sub
+        End If
+    Next
     Exit Sub
     
+End Sub
+
+Sub testX()
+Dim templateRng As Range
+Set templateRng = main.get_isah_input_range()
+capgrp_column_index = r.getColumnIndex(templateRng, main.CAPGRP_COLUMN_NAME)
+Debug.Print templateRng.columns(capgrp_column_index).Cells.count
 End Sub
 
 Sub test_ln1_updated()

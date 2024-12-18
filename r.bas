@@ -89,7 +89,7 @@
 
 ' Utilities
 ' str_to_array(str0) => Converts string to array
-' get_array_len(arr) => Gets length of array
+' a.ArrayLength(arr) => Gets length of array
 
 ' constants
 Global Const MAX_XL_ROWS As Long = 1048576
@@ -240,13 +240,15 @@ Sub test_range_functions()
     Exit Sub
 End Sub
 
-
-
-Sub test_fit_named_range()
-r.fit_named_range_to_values "LN_5_orders", searchUpRange:=Range("A999")
-Debug.Print r.get_range("LN_5_orders").address
+Sub test_add_formula()
+    r.create_named_range "test", "test", "$G$1:$H$13", clear:=False
+    r.add_formula_column_to_named_range "test", formulaDefinition:="=G2+H2"
 End Sub
 
+Sub test_fit_named_range()
+    r.fit_named_range_to_values "LN_5_orders", searchUpRange:=Range("A999")
+    Debug.Print r.get_range("LN_5_orders").address
+End Sub
 
 Sub test_subsetting()
     Dim rng0 As Range, new_column_name As String
@@ -264,6 +266,17 @@ Sub test_subsetting()
     Debug.Assert r.column_exist(rng0, new_column_name) = False
 
 End Sub
+
+Sub test_set_bold_row()
+    Dim orders_rng As Range, orders_values_rng As Range
+    Set orders_rng = get_orders_range("LN 1")
+    enddates = r.get_column_values(orders_rng, main.ENDDATE_COLUMN)
+    overflow_row_index = main.find_week_overflow_row(enddates)
+    Debug.Print overflow_row_index, enddates(overflow_row_index, 1)
+    Set orders_values_rng = r.get_range_values(orders_rng)
+    orders_values_rng.Rows(overflow_row_index).Font.Bold = True
+End Sub
+
 
 Sub SetColumnValues(rng As Range, Optional values)
     ' This subroutine sets the values of a range excluding the first row (header).
@@ -284,7 +297,7 @@ Sub SetColumnValues(rng As Range, Optional values)
     If IsArray(values) Then
         ' Check if the number of rows in valuesRng matches the length of the array
         values = a.ConvertTo1DArray(values)
-        num_values = a.array_length(values)
+        num_values = a.ArrayLength(values)
         If valuesRng.Rows.count = num_values Then
             ' Loop over items of values and set to cells in valuesRng
             For i = LBound(values) To UBound(values)
@@ -459,7 +472,7 @@ End Function
 ' named ranges
 Function create_named_range(ByVal name As String, ByVal sheetName As String, ByVal address As String, _
 Optional ByVal default_value As Variant, Optional ByVal formula, Optional header_row As String = "", Optional id_row As String = "", _
-Optional overwrite As Boolean = True, Optional expand_range As Boolean = False, Optional clear As Boolean = True)
+Optional overwrite As Boolean = True, Optional expand_range As Boolean = False, Optional clear As Boolean = True, Optional dbg As Boolean = False)
     
     Dim rng As Range
     Dim exists As Boolean, num_rows As Long, num_cols As Long, wb As Workbook
@@ -509,19 +522,23 @@ Optional overwrite As Boolean = True, Optional expand_range As Boolean = False, 
     ' If header_row is specified, set the values to the first row of the named range
     If Len(header_row) > 0 Then
         header_array = str_to_array(header_row)
-        num_cols = get_array_len(header_array)
+        num_cols = a.ArrayLength(header_array)
     End If
     
     ' If id_row is specified, set the values to the first column of the named range
     If Len(id_row) > 0 Then
         id_array = str_to_array(id_row)
-        num_rows = get_array_len(id_array)
+        num_rows = a.ArrayLength(id_array)
     End If
     
     If rng.columns.count <> num_cols Or rng.Rows.count <> num_rows Then
-       Debug.Print rng.address
+       If dbg Then
+          Debug.Print rng.address
+       End If
        Set rng = r.getResizedRange(rng.Cells(1, 1), num_rows - 1, num_cols - 1)
-       Debug.Print num_rows, num_cols, rng.address
+       If dbg Then
+          Debug.Print num_rows, num_cols, rng.address
+       End If
     End If
     
     If Len(header_row) > 0 Then
@@ -609,7 +626,7 @@ Sub updateNamedRangeWithValues(named_range_name As String, values As Variant, Op
     ' Check if values is a 2D array
     If Not a.is_2d_array(values) Then
         Err.Raise 1001, "updateNamedRangeWithValues", "values must be a 2D array"
-    ElseIf a.array_length(values) < 0 Then
+    ElseIf a.ArrayLength(values) < 0 Then
         Exit Sub 'array is empty
     End If
     
@@ -621,7 +638,7 @@ Sub updateNamedRangeWithValues(named_range_name As String, values As Variant, Op
     r.clear_range rng, rng.Worksheet, clear_formatting:=clear_formatting
     
     ' Resize the named range to match the dimensions of the values array
-    numCols = a.num_array_columns(values)
+    numCols = a.numArrayColumns(values)
     numRows = a.numArrayRows(values)
     
     Set rng = r.getResizedRange(rng, num_rows:=numRows, num_cols:=numCols)
@@ -766,10 +783,7 @@ Sub fill_formula_range(rng, formulaDefinition, Optional only_values As Boolean =
     End If
 End Sub
 
-Sub test_add_formula()
-r.create_named_range "test", "test", "$G$1:$H$13", clear:=False
-r.add_formula_column_to_named_range "test", formulaDefinition:="=G2+H2"
-End Sub
+
 
 Function safe_offset(rng0 As Range, Optional offset_row = 0, Optional offset_column = 0) As Range
     If rng0.Rows.count < r.MAX_XL_ROWS Then
@@ -1051,7 +1065,6 @@ Function get_column(rng, index As Variant, Optional ws As Worksheet, Optional wb
     Dim rng0 As Range
     Dim col_index As Long
     Set rng0 = get_range(rng, ws, wb)
-    
     col_index = r.get_column_index(rng0, index)
     If offset_row < 1 Then
        Set get_column = rng0.columns(col_index)
@@ -2328,22 +2341,9 @@ Function str_to_array(str0) As Variant
     End If
 End Function
 
-Function get_array_len(arr) As Long
-    get_array_len = UBound(arr) - LBound(arr) + 1
-End Function
 
 
 
-' TESTS
-Sub test_set_bold_row()
-    Dim orders_rng As Range, orders_values_rng As Range
-    Set orders_rng = get_orders_range("LN 1")
-    enddates = r.get_column_values(orders_rng, main.ENDDATE_COLUMN)
-    overflow_row_index = main.find_week_overflow_row(enddates)
-    Debug.Print overflow_row_index, enddates(overflow_row_index, 1)
-    Set orders_values_rng = r.get_range_values(orders_rng)
-    orders_values_rng.Rows(overflow_row_index).Font.Bold = True
-End Sub
 
 
 

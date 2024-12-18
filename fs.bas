@@ -676,6 +676,12 @@ Public Sub addProcedureToModule(codelines As String, proc_name As String, module
     ' Split the code lines into an array using the specified separator
     code_array = Split(codelines, sep)
     
+    ' Check if there is already code in the module
+    If code_module.CountOfLines > 0 Then
+        ' Add an additional line break before inserting the new procedure
+        code_module.InsertLines code_module.CountOfLines + 1, "" ' NEW: Add line break
+    End If
+    
     ' Add the new procedure code to the module
     For i = LBound(code_array) To UBound(code_array)
         code_module.InsertLines code_module.CountOfLines + 1, Trim(code_array(i))
@@ -684,3 +690,83 @@ Public Sub addProcedureToModule(codelines As String, proc_name As String, module
     Debug.Print "Procedure '" & proc_name & "' added to module '" & module_name & "'."
 End Sub
 
+' This function retrieves the code lines of a specified procedure from a given module.
+'
+' @param proc_name The name of the procedure to retrieve.
+' @param module_name The name of the module from which to retrieve the procedure.
+' @return A string containing the code lines of the procedure, separated by semicolons.
+Public Function getProcedureCode(proc_name As String, module_name As String, Optional trim_code As Boolean = True) As String 'NEW
+    Dim module_object As Object
+    Dim code_module As Object
+    Dim start_line As Long
+    Dim end_line As Long
+    Dim line_text As String
+    Dim found As Boolean
+    Dim code_lines As String
+    
+    ' Get the module object
+    Set module_object = ThisWorkbook.VBProject.VBComponents(fs.findModuleName(module_name))
+    Set code_module = module_object.codeModule
+    
+    ' Initialize variables
+    found = False
+    start_line = 1
+    code_lines = ""
+    
+    ' Loop through each line in the module to find the procedure
+    Do While start_line <= code_module.CountOfLines
+        line_text = Trim(code_module.Lines(start_line, 1))
+        
+        ' Check if the line contains the procedure definition
+        If (LCase(left(line_text, 3)) = "sub" Or LCase(left(line_text, 8)) = "function" Or LCase(left(line_text, 11)) = "private sub" Or LCase(left(line_text, 16)) = "private function") And InStr(line_text, proc_name) > 0 Then
+            found = True
+            Exit Do
+        End If
+        
+        start_line = start_line + 1
+    Loop
+    
+    ' If the procedure is found, determine the end line and collect the lines
+    If found Then
+        end_line = start_line
+        
+        ' Find the end of the procedure
+        Do While end_line <= code_module.CountOfLines
+            If trim_code Then
+               line_text = Trim(code_module.Lines(end_line, 1))
+            Else
+               line_text = code_module.Lines(end_line, 1)
+            End If
+            code_lines = code_lines & line_text & vbCrLf
+            If LCase(line_text) = "end sub" Or LCase(line_text) = "end function" Then
+                Exit Do
+            End If
+            end_line = end_line + 1
+        Loop
+        
+        ' Remove the trailing semicolon
+        If Right(code_lines, 1) = ";" Then
+            code_lines = left(code_lines, Len(code_lines) - 1)
+        End If
+    Else
+        Err.Raise vbObjectError + 1, "getProcedureCode", "Procedure '" & proc_name & "' not found in module '" & module_name & "'."
+    End If
+    
+    ' Return the code lines
+    getProcedureCode = code_lines
+End Function
+
+' This subroutine copies a procedure from one module to another.
+'
+' @param proc_name The name of the procedure to copy.
+' @param src_module The name of the source module containing the procedure.
+' @param trg_module The name of the target module where the procedure should be copied.
+Public Sub copyProcedureCode(proc_name As String, src_module As String, trg_module As String) 'NEW
+    Dim codelines As String
+    
+    ' Get the procedure code lines from the source module
+    codelines = getProcedureCode(proc_name, src_module, False)
+    
+    ' Remove and add the procedure code lines in the target module
+    addProcedureToModule codelines, proc_name, trg_module
+End Sub

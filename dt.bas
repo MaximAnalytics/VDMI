@@ -8,20 +8,25 @@
 'format_datetime(date_value, Optional str_format) => Formats a date value into a string using the specified or default format
 'set_date_timepart(date0 As Date, Optional timepart) => Sets the time part of a date to the specified or default time
 
-
 Sub test_dt_functions()
     Dim date0 As Date
     datestr = "28/07/2023 23:00:00"
     date0 = datestr
+    thisyear = year(Now())
+    nextyear = year(Now()) + 1
     Debug.Print date0
     
     Debug.Assert dt.vdmi_get_day_of_week("2024-02-05", "ma") = "2024-02-05" 'date of "ma" in the week of 2024-02-05
     Debug.Assert dt.vdmi_get_day_of_week("2024-02-05", "di") = "2024-02-06" 'date of "di" in the week of 2024-02-05
     
     ' Assertion test for the formatDateVDMI function
-    Debug.Assert formatDateVDMI(#2/11/2024 8:29:00 PM#) = "Zondag 11 20:29"
-    Debug.Assert formatDateVDMI(#2/12/2024 8:29:00 PM#) = "Maandag 12 20:29"
-    Debug.Assert formatDateVDMI(#3/1/2024 8:29:00 PM#) = "Vrijdag 01 20:29"
+    Debug.Print formatDateVDMI(#2/11/2024 8:29:00 PM#)
+    Debug.Assert formatDateVDMI(#2/11/2024 8:29:00 PM#) = "Zon 11 20:29"
+    Debug.Assert formatDateVDMI(#2/12/2024 8:29:00 PM#) = "Ma 12 20:29"
+    Debug.Assert formatDateVDMI(#3/1/2024 8:29:00 PM#) = "Vrij 01 20:29"
+    
+    Debug.Assert determine_year_based_on_weeknum(1) = nextyear
+    Debug.Assert determine_year_based_on_weeknum(54) = thisyear
     
 End Sub
 
@@ -38,14 +43,15 @@ Function first_day_isoweek(weeknum As Integer, year As Integer) As Date
     ' Get the weekday of January 1st (1 = Sunday, 2 = Monday, ..., 7 = Saturday)
     jan1Weekday = Weekday(jan1, vbMonday)
     
-    ' Calculate the number of days to Monday of the ISO week
-    daysToMonday = (8 - jan1Weekday) Mod 7
+    ' Calculate the number of days to previous Monday on Jan 1st: this is the start of the ISO week
+    daysToMonday = jan1Weekday
     
     ' Calculate the first day of the ISO week
-    firstDay = DateAdd("d", (weeknum - 1) * 7 + daysToMonday, jan1)
+    firstDay = DateAdd("d", (weeknum - 1) * 7 - daysToMonday + 1, jan1)
     
     ' Return the first day of the ISO week
     first_day_isoweek = firstDay
+    
 End Function
 
 Function vdmi_get_day_of_week(startDate As Date, day As String) As Date
@@ -183,5 +189,31 @@ Function set_date_timepart(date0 As Date, Optional timepart As String = "00:00")
     set_date_timepart = datePart + timepart
 End Function
 
+' WEEKS
+Function determine_year_based_on_weeknum(weeknum As Integer) As Integer
+    ' Determines the year based on the given week number.
+    ' If the current week number is less than or equal to the given week number,
+    ' it sets the year as the current year (value of the year today).
+    ' If the current week number is greater than the given week number,
+    ' it sets the year as the next year (value of the year today + 1).
+    '
+    ' Parameters:
+    ' weeknum - The week number to compare with the current week number.
+    '
+    ' Returns:
+    ' An integer representing the determined year.
 
+    Dim currentWeeknum As Integer
+    Dim currentYear As Integer
 
+    ' Get the current week number and year
+    currentWeeknum = datePart("ww", Date, vbMonday, vbFirstJan1)
+    currentYear = year(Date)
+
+    ' Determine the year based on the comparison of week numbers
+    If currentWeeknum <= weeknum Then
+        determine_year_based_on_weeknum = currentYear
+    Else
+        determine_year_based_on_weeknum = currentYear + 1
+    End If
+End Function

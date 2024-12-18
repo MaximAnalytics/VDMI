@@ -4,10 +4,11 @@ Private Sub Worksheet_Activate()
 End Sub
 
 Private Sub Worksheet_Change(ByVal Target As Range)
-    Dim wb0 As Workbook, ws0 As Worksheet, listenerRng As Range, rng0 As Range, num_cols As Long, capgrp As String, _
-    orders_range_name As String, worktimes_range_name As String, worktimes0 As Range, ordersRange As Range, _
-    durationRange As Range, qtyRange As Range, wkNumberRange As Range, targetRange As Range, _
-    ordersRangeFooter As Range, volgnummerRange As Range
+    Dim wb0 As Workbook, ws0 As Worksheet, listenerRng As Range, rng0 As Range, num_cols As Long, capgrp As String
+    Dim orders_range_name As String, worktimes_range_name As String, worktimes0 As Range, ordersRange As Range
+    Dim durationRange As Range, qtyRange As Range, wkNumberRange As Range, targetRange As Range
+    Dim ordersRangeFooter As Range, volgnummerRange As Range
+    Dim current_prodwk As Integer, prodwk_year As Integer
     
     Set wb0 = ThisWorkbook
     Set ws0 = Target.Worksheet
@@ -23,11 +24,14 @@ Private Sub Worksheet_Change(ByVal Target As Range)
 On Error GoTo handle_error
     Application.ScreenUpdating = False
     Application.EnableEvents = False
-        
-    ' events updating wkNumberRange inputs on other sheets
+    
+    Dim wkNumberRangeNext As Range, yrNumberRange As Range
+    Set wkNumberRange = main.get_weeknumber_range(capgrp)
+    Set yrNumberRange = main.get_yearnumber_range(capgrp)
+    
+    ' events updating LN 1 wkNumberRange inputs on other sheets
     If capgrp = "LN 1" Then
-        Dim next_capgrp As String, wkNumberRangeNext As Range
-        Set wkNumberRange = main.get_weeknumber_range(capgrp)
+        Dim next_capgrp As String
         If Not Intersect(Target, wkNumberRange) Is Nothing Then
            If main.P_DEBUG Then
               Debug.Print "weeknumber changed on " & ws0.name & ", set on other sheets.."
@@ -36,13 +40,27 @@ On Error GoTo handle_error
            For Each c In main.get_capgrp_sheet_names()
               next_capgrp = c
               If capgrp <> next_capgrp Then
-                 Set wkNumberRangeNext = main.get_weeknumber_range(next_capgrp)
-                 wkNumberRangeNext.Cells(2, 2).value = wkNumberRange.Cells(2, 2).value
+                 If r.name_exist(main.get_yearnumber_range_name(next_capgrp)) Then
+                    Set wkNumberRangeNext = main.get_weeknumber_range(next_capgrp)
+                    wkNumberRangeNext.Cells(2, 2).value = wkNumberRange.Cells(2, 2).value
+                 End If
               End If
            Next c
         End If
         ' return to current ws
         ws0.Activate
+    End If
+    
+    ' CHANGE 20241209: Change yrNumberRange if wkNumberRange changes into next year
+    If Not Intersect(Target, wkNumberRange) Is Nothing Then
+       current_prodwk = main.get_capgrp_weeknumber(capgrp)
+       prodwk_year = dt.determine_year_based_on_weeknum(current_prodwk)
+       Call main.set_capgrp_year(capgrp, prodwk_year)
+    End If
+    
+    ' CHANGE 20241128: Call btn recalculate dates if either year or week changes
+    If Not Intersect(Target, wkNumberRange) Is Nothing Or Not Intersect(Target, yrNumberRange) Is Nothing Then
+       Call main.btn_calculate_dates_Click
     End If
 
     ' events updating ordersRange
@@ -113,8 +131,7 @@ On Error GoTo handle_error
         If eventOrdersFooter Then
            Set ordersRange = r.expand_range(ordersRange, ws0, wb0)
            r.update_named_range orders_range_name, ordersRange, wb0
-           warningString = str.subInStr("Worksheet_Change on @1, target address is orderRange footer, new orderRange is @2", ws0.name, _
-           ordersRange.address)
+           warningString = str.subInStr("Worksheet_Change on @1, target address is orderRange footer, new orderRange is @2", ws0.name, ordersRange.address)
            Debug.Print warningString
         End If
         
@@ -123,15 +140,30 @@ On Error GoTo handle_error
             If main.P_DEBUG Then
                Debug.Print "data changed on sheet " & ws0.name & ", cell:" & target_address
             End If
+            
+            ' worktimes range header and ids if target
+            If eventWorkDayTimesRange Then
+               ' CHANGE 20241128: reset first row, first column of worktimes0
+               Dim worktimesFirstRow As Range, worktimesFirstColumn As Range
+               Set worktimesFirstRow = r.get_row(worktimes0, 1)
+               Set worktimesFirstColumn = r.get_column(worktimes0, 1)
+               
+               If Not Intersect(Target, worktimesFirstRow) Is Nothing Or Not Intersect(Target, worktimesFirstColumn) Is Nothing Then
+                  ' Call init_worktimes_days to reinitialize the first row and column
+                  main.init_workdaytimes_days_times capgrp
+               End If
+            End If
+            
             main.update_start_end_times capgrp
             main.update_orders_color_format capgrp
+            
             ' worktimesrange formatting if target
             If eventWorkDayTimesRange Then
                r.ClearAllBorders main.get_worktimes_values_range(capgrp)
                r.add_outside_border main.get_worktimes_values_range(capgrp)
             End If
         End If
-        
+
         ' if target is the ordersRange then recalculate the Volgnummer
         If eventOrdersRange Then
            main.calculate_volgnummer capgrp
@@ -163,10 +195,5 @@ handle_error:
        MsgBox "Onbekende fout opgetreden!", vbCritical     'Show error to user but dont break to VB editor
     End If
 End Sub
-
-
-
-
-
 
 

@@ -1,12 +1,7 @@
 ' 1. controls: buttons, etc
 ' 2. message boxes and windows
-Option Explicit
+' 3. form control buttons
 
-Private Declare PtrSafe Function FindWindow Lib "user32" Alias "FindWindowA" _
-    (ByVal lpClassName As String, ByVal lpWindowName As String) As LongPtr
-Private Declare PtrSafe Function GetWindowText Lib "user32" Alias "GetWindowTextA" _
-    (ByVal hwnd As LongPtr, ByVal lpString As String, ByVal cch As Long) As Long
-    
 ' 0 tests
 Sub test_controls_functions()
     ctr.test_formButtonFunctions
@@ -98,44 +93,7 @@ End Sub
 
 
 ' 2. message box and windows
-Public Function HasMsgBox() As Boolean
-    Dim hwnd As LongPtr
-    
-    ' Find the window with the specified title (the message text)
-    hwnd = FindWindow("#32770", vbNullString)  ' #32770 is the class name for a MessageBox
-    
-    HasMsgBox = (hwnd <> 0)
-End Function
 
-Public Function CheckMessageBox(msgText As String) As Boolean
-    Dim hwnd As LongPtr
-    Dim buffer As String
-    Dim textLength As Long
-    
-    ' Find the window with the specified title (the message text)
-    hwnd = FindWindow("#32770", vbNullString)  ' #32770 is the class name for a MessageBox
-    
-    ' If the window is found
-    If hwnd <> 0 Then
-        ' Prepare buffer to hold the window's title
-        buffer = String(256, vbNullChar)
-        
-        ' Get the window's title text
-        textLength = GetWindowText(hwnd, buffer, Len(buffer))
-        
-        ' Trim the buffer to the length of the text
-        buffer = left(buffer, textLength)
-        
-        ' Check if the message box text matches the expected message
-        If InStr(buffer, msgText) > 0 Then
-            CheckMessageBox = True
-            Exit Function
-        End If
-    End If
-    
-    ' If no match is found
-    CheckMessageBox = False
-End Function
 
 ' 3 Form control buttons
 
